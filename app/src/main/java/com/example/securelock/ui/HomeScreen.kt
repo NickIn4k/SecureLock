@@ -40,7 +40,6 @@ fun HomeScreen(navController: NavController) {
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
                 Text(
                     text = "SecureLock",
                     style = MaterialTheme.typography.headlineMedium,
@@ -70,7 +69,7 @@ fun HomeScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // FINGERPRINT
+                // FINGERPRINT - TODO
                 OutlinedButton(
                     onClick = {
                         val activity = context as FragmentActivity

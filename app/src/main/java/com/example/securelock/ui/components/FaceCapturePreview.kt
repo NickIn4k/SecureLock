@@ -43,13 +43,15 @@ fun FaceCapturePreview(
 
     var isProcessing by remember { mutableStateOf(false) }
     var alreadyCaptured by remember { mutableStateOf(false) }
+    var embeddingSamples by remember { mutableStateOf<List<List<Float>>>(emptyList()) }
 
     val faceNetHelper = remember { FaceNetHelper(context) }
+
     val faceDetector = remember {
         FaceDetection.getClient(
             FaceDetectorOptions.Builder()
-                .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
-                .setMinFaceSize(0.25f)
+                .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
+                .setMinFaceSize(0.3f)
                 .build()
         )
     }
@@ -67,10 +69,7 @@ fun FaceCapturePreview(
     ) == PackageManager.PERMISSION_GRANTED
 
     if (!hasPermission) {
-        Box(
-            modifier = modifier,
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier, contentAlignment = Alignment.Center) {
             Text("Permesso fotocamera non concesso")
         }
         return
@@ -95,6 +94,7 @@ fun FaceCapturePreview(
                         .build()
 
                     analyzer.setAnalyzer(executor) { imageProxy ->
+
                         if (isProcessing || alreadyCaptured) {
                             imageProxy.close()
                             return@setAnalyzer
@@ -112,16 +112,49 @@ fun FaceCapturePreview(
 
                         faceDetector.process(inputImage)
                             .addOnSuccessListener { faces ->
+
                                 if (faces.isEmpty()) {
+                                    onStatusChange("Nessun volto rilevato")
+                                    imageProxy.close()
+                                    return@addOnSuccessListener
+                                }
+
+                                // Controlli qualità
+                                val face = faces[0]
+                                val imageWidth = inputImage.width
+                                val imageHeight = inputImage.height
+
+                                val faceArea = face.boundingBox.width() * face.boundingBox.height()
+                                val imageArea = imageWidth * imageHeight
+
+                                val margin = 20
+                                val box = face.boundingBox
+
+                                val isFullyInside =
+                                    box.left > margin &&
+                                    box.top > margin &&
+                                    box.right < inputImage.width - margin &&
+                                    box.bottom < inputImage.height - margin
+
+
+                                val isValid =
+                                    face.headEulerAngleY in -10f..10f &&
+                                    face.headEulerAngleX in -10f..10f &&
+                                    face.headEulerAngleZ in -10f..10f &&
+                                    faceArea > imageArea * 0.05f &&
+                                    isFullyInside
+
+                                if (!isValid) {
+                                    onStatusChange("Guarda dritto e avvicinati")
                                     imageProxy.close()
                                     return@addOnSuccessListener
                                 }
 
                                 isProcessing = true
-                                onStatusChange("Analisi volto...")
+                                onStatusChange("Acquisizione in corso...")
 
                                 val bitmap = imageProxy.toBitmap()
-                                val faceBitmap = cropFace(bitmap, faces[0].boundingBox)
+                                val faceBitmap = cropFace(bitmap, face.boundingBox)
 
                                 if (faceBitmap == null) {
                                     isProcessing = false
@@ -131,19 +164,34 @@ fun FaceCapturePreview(
 
                                 try {
                                     val embedding = faceNetHelper.getEmbedding(faceBitmap)
+
+                                    val newSamples = embeddingSamples + listOf(embedding)
+                                    embeddingSamples = newSamples
+
+                                    // Raccolta campioni
+                                    if (newSamples.size < 7) {
+                                        onStatusChange("Rimani fermo (${newSamples.size}/5)")
+                                        isProcessing = false
+                                        imageProxy.close()
+                                        return@addOnSuccessListener
+                                    }
+
+                                    // Media finale
+                                    val finalEmbedding = averageEmbeddings(newSamples)
+
                                     alreadyCaptured = true
                                     onStatusChange("Volto acquisito correttamente")
-                                    onEmbeddingCaptured(embedding)
+                                    onEmbeddingCaptured(finalEmbedding)
+
                                 } catch (e: Exception) {
                                     Log.e("FaceCapture", "Errore embedding", e)
-                                    onStatusChange("Errore durante l'analisi del volto")
+                                    onStatusChange("Errore analisi volto")
                                 } finally {
                                     isProcessing = false
                                     imageProxy.close()
                                 }
                             }
-                            .addOnFailureListener { e ->
-                                Log.e("FaceCapture", "Errore ML Kit", e)
+                            .addOnFailureListener {
                                 isProcessing = false
                                 imageProxy.close()
                             }
@@ -156,15 +204,30 @@ fun FaceCapturePreview(
                         preview,
                         analyzer
                     )
+
                 } catch (e: Exception) {
                     Log.e("FaceCapture", "Errore camera", e)
                 }
+
             }, ContextCompat.getMainExecutor(ctx))
 
             previewView
         },
         modifier = modifier
     )
+}
+
+fun averageEmbeddings(samples: List<List<Float>>): List<Float> {
+    val size = samples[0].size
+    val result = MutableList(size) { 0f }
+
+    for (sample in samples) {
+        for (i in 0 until size) {
+            result[i] += sample[i]
+        }
+    }
+
+    return result.map { it / samples.size }
 }
 
 fun cropFace(bitmap: Bitmap, box: Rect): Bitmap? {

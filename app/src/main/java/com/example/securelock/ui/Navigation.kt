@@ -1,5 +1,6 @@
 package com.example.securelock.ui
 
+import WelcomeScreen
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -12,6 +13,7 @@ object Routes {
     const val LOGIN = "login"
     const val ADMIN_NEW_USER = "admin_new_user"
     const val CREDITS = "credits"
+    const val WELCOME = "welcome/{userId}"
 }
 
 @Composable
@@ -46,5 +48,14 @@ fun AppNavigation() {
         composable(Routes.CREDITS) {
             CreditsScreen(navController = navController)
         }*/
+
+        composable("welcome/{userId}") { backStackEntry ->
+
+            val userId = backStackEntry.arguments
+                ?.getString("userId")
+                ?.toIntOrNull() ?: 0
+
+            WelcomeScreen(userId)
+        }
     }
 }

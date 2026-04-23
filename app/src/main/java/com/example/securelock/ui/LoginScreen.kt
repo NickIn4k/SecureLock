@@ -84,19 +84,28 @@ fun LoginScreen(navController: NavHostController) {
                     message = ""
 
                     scope.launch {
-                        message = try {
+
+                        isLoading = true
+
+                        try {
                             val response = ApiClient.api.login(
                                 LoginRequest(username, password)
                             )
 
                             if (response.isSuccessful && response.body()?.success == true) {
-                                "Login riuscito"
-                                // TODO GESTIONE HTTP
+
+                                val userId = response.body()?.userId ?: 0
+
+                                message = "Login riuscito"
+
+                                navController.navigate("welcome/$userId")
+
                             } else {
-                                "Credenziali non valide"
+                                message = "Credenziali non valide"
                             }
+
                         } catch (e: Exception) {
-                            "Errore: " + e.message
+                            message = "Errore: ${e.message}"
                         }
 
                         isLoading = false

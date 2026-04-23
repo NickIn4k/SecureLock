@@ -30,13 +30,16 @@ fun FaceAuthScreen(navController: NavController) {
                 scope.launch {
                     sendToBackend(
                         embedding = embedding,
-                        onSuccess = {
+
+                        onSuccess = { userId ->
                             statusMessage = "Accesso autorizzato!"
-                            // navController.navigate("...")
+                            navController.navigate("welcome/$userId")
                         },
+
                         onFailure = {
                             statusMessage = "Volto non riconosciuto"
                         },
+
                         onError = {
                             statusMessage = "Errore connessione"
                         }
@@ -69,24 +72,22 @@ fun FaceAuthScreen(navController: NavController) {
 
 private suspend fun sendToBackend(
     embedding: List<Float>,
-    onSuccess: () -> Unit,
+    onSuccess: (Int) -> Unit,
     onFailure: () -> Unit,
     onError: () -> Unit
 ) {
     try {
-        val api = ApiClient.api
-
-        val response = api.authWithFace(
-            FaceAuthRequest(
-                embedding = embedding
-            )
+        val response = ApiClient.api.authWithFace(
+            FaceAuthRequest(embedding)
         )
 
         if (response.isSuccessful && response.body()?.success == true) {
-            onSuccess()
+            val userId = response.body()?.userId ?: 0
+            onSuccess(userId)
         } else {
             onFailure()
         }
+
     } catch (e: Exception) {
         onError()
     }

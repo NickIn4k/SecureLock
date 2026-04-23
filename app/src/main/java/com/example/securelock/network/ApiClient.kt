@@ -6,8 +6,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-// Configurazione Retrofit => backend Express.
 object ApiClient {
+
     private const val BASE_URL = "http://10.88.191.46:3000/"
 
     private val okHttpClient = OkHttpClient.Builder()
@@ -23,4 +23,7 @@ object ApiClient {
         .client(okHttpClient)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
+
+    // Istanza di ApiService creata una volta sola e riutilizzata
+    val api: ApiService = retrofit.create(ApiService::class.java)
 }

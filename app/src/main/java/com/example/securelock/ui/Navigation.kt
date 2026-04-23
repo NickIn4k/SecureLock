@@ -10,6 +10,8 @@ object Routes {
     const val HOME = "home"
     const val FACE_AUTH = "face_auth"
     const val LOGIN = "login"
+    const val ADMIN_NEW_USER = "admin_new_user"
+    const val CREDITS = "credits"
 }
 
 @Composable
@@ -27,11 +29,22 @@ fun AppNavigation() {
         composable(Routes.HOME) {
             HomeScreen(navController = navController)
         }
+
         composable(Routes.FACE_AUTH) {
             FaceAuthScreen(navController = navController)
         }
+
         composable(Routes.LOGIN) {
             LoginScreen(navController = navController)
         }
+
+        composable(Routes.ADMIN_NEW_USER) {
+            AdminNewUserScreen(navController = navController)
+        }
+
+        /* TODO CREDITS
+        composable(Routes.CREDITS) {
+            CreditsScreen(navController = navController)
+        }*/
     }
 }

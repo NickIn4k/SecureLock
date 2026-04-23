@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit
 
 // Configurazione Retrofit => backend Express.
 object ApiClient {
-    private const val BASE_URL = "http://192.168.1.100:3000/"
+    private const val BASE_URL = "http://10.88.191.46:3000/"
 
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {

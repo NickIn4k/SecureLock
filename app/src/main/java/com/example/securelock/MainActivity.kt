@@ -1,6 +1,10 @@
 package com.example.securelock
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.compose.ui.platform.LocalContext
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -53,19 +57,26 @@ class MainActivity : ComponentActivity() {
     // UI
     @androidx.compose.runtime.Composable
     private fun App() {
+        val context = LocalContext.current
         MaterialTheme {
             Surface {
                 // In caso di permesso negato => dialog di errore
                 if (showPermissionDeniedDialog) {
                     AlertDialog(
                         onDismissRequest = { showPermissionDeniedDialog = false },
-                        title = { Text("Permesso negato") },
-                        text = { Text("Permesso negato. Non posso far partire l'app") },
+                        title = { Text("Permessi negati") },
+                        text = { Text("Attiva i permessi richiesti!") },
                         confirmButton = {
+                            // Aprire le impostazioni
                             TextButton(onClick = {
-                                showPermissionDeniedDialog = false
+                                val intent = Intent(
+                                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                                ).apply {
+                                    data = Uri.fromParts("package", context.packageName, null)
+                                }
+                                context.startActivity(intent)
                             }) {
-                                Text("OK")
+                                Text("Apri impostazioni")
                             }
                         }
                     )

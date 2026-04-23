@@ -262,8 +262,7 @@ private suspend fun sendToBackend(
 
         val response = api.authWithFace(
             FaceAuthRequest(
-                embedding = embedding,
-                drawerId = -1 // TO DO
+                embedding = embedding
             )
         )
 

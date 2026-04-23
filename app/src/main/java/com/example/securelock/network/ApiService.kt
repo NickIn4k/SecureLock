@@ -8,7 +8,7 @@ import retrofit2.http.POST
 
 interface ApiService {
     // Invia face embedding.
-    // Se autorizzato, aprirà il cassettino
+    // Se autorizzato, darà accesso all'area personale
     @POST("api/auth/face")
     suspend fun authWithFace(
         @Body body: FaceAuthRequest
@@ -31,12 +31,10 @@ interface ApiService {
 // Modelli request
 data class FaceAuthRequest(
     val embedding: List<Float>, // vettore 128val (di FaceNet)
-    val drawerId: Int           // cassettino
 )
 
 data class FingerprintAuthRequest(
     val userId: Int,
-    val drawerId: Int
 )
 
 data class LoginRequest(

@@ -1,35 +1,21 @@
 package com.example.securelock.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.securelock.network.ApiClient
 import com.example.securelock.network.CreateUserRequest
 import com.example.securelock.ui.components.FaceCapturePreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
 fun AdminNewUserScreen(navController: NavController) {
+
+    // ----------- STATE -----------
     var fullName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -38,6 +24,9 @@ fun AdminNewUserScreen(navController: NavController) {
     var message by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
+
+    // Selezione cassetti
+    var selectedDrawers by remember { mutableStateOf(setOf<Int>()) }
 
     val scope = rememberCoroutineScope()
 
@@ -53,7 +42,7 @@ fun AdminNewUserScreen(navController: NavController) {
             style = MaterialTheme.typography.headlineSmall
         )
 
-        // ---------- CARD DATI ----------
+        // ----------- CARD DATI UTENTE -----------
         Card {
             Column(Modifier.padding(16.dp)) {
 
@@ -84,7 +73,7 @@ fun AdminNewUserScreen(navController: NavController) {
             }
         }
 
-        // ---------- CARD FACE ----------
+        // ----------- CARD FACE -----------
         Card {
             Column(Modifier.padding(16.dp)) {
 
@@ -101,7 +90,6 @@ fun AdminNewUserScreen(navController: NavController) {
 
                 Spacer(Modifier.height(8.dp))
 
-                // Bottone attiva scanner
                 Button(
                     onClick = { isScanning = true },
                     enabled = !isScanning && faceEmbedding == null
@@ -111,7 +99,6 @@ fun AdminNewUserScreen(navController: NavController) {
 
                 Spacer(Modifier.height(8.dp))
 
-                // Camera SOLO se attiva
                 if (isScanning) {
                     FaceCapturePreview(
                         modifier = Modifier
@@ -132,9 +119,56 @@ fun AdminNewUserScreen(navController: NavController) {
             }
         }
 
-        // ---------- SALVATAGGIO ----------
+        // ----------- CARD CASSETTI -----------
+        Card {
+            Column(Modifier.padding(16.dp)) {
+
+                Text("Cassetti assegnati")
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text = "Selezionati: ${selectedDrawers.size}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                // TODO ESEMPIO STATICO - COLLEGA BACKEND
+                // Qui stai usando una lista finta.
+                // In futuro sostituiscila con una chiamata API (GET /drawers)
+                val drawers = listOf(
+                    1 to "Cassetto 1",
+                    2 to "Cassetto 2",
+                    3 to "Cassetto 3",
+                    4 to "Cassetto 4"
+                )
+
+                drawers.forEach { (id, name) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(name)
+
+                        Checkbox(
+                            checked = selectedDrawers.contains(id),
+                            onCheckedChange = { checked ->
+                                selectedDrawers = if (checked)
+                                    selectedDrawers + id
+                                else
+                                    selectedDrawers - id
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // ----------- SALVATAGGIO -----------
         Button(
             onClick = {
+
                 if (fullName.isBlank() || username.isBlank() || password.isBlank()) {
                     message = "Compila tutti i campi"
                     return@Button
@@ -156,17 +190,17 @@ fun AdminNewUserScreen(navController: NavController) {
                                 fullName = fullName,
                                 username = username,
                                 password = password,
-                                faceEmbedding = embedding
+                                faceEmbedding = embedding,
+                                drawerIds = selectedDrawers.toList()
                             )
                         )
 
                         if (response.isSuccessful && response.body()?.success == true) {
                             message = "Utente creato correttamente"
 
-                            // Aspetta 1 secondo e torna indietro
-                            kotlinx.coroutines.delay(1000)
-
+                            delay(1000)
                             navController.popBackStack()
+
                         } else {
                             message = "Errore creazione utente"
                         }

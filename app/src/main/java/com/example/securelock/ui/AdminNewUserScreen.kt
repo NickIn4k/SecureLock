@@ -160,10 +160,15 @@ fun AdminNewUserScreen(navController: NavController) {
                             )
                         )
 
-                        message = if (response.isSuccessful && response.body()?.success == true) {
-                            "Utente creato correttamente"
+                        if (response.isSuccessful && response.body()?.success == true) {
+                            message = "Utente creato correttamente"
+
+                            // Aspetta 1 secondo e torna indietro
+                            kotlinx.coroutines.delay(1000)
+
+                            navController.popBackStack()
                         } else {
-                            "Errore creazione utente"
+                            message = "Errore creazione utente"
                         }
 
                     } catch (e: Exception) {

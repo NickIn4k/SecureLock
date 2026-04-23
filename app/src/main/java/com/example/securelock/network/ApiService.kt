@@ -53,5 +53,7 @@ data class AuthResponse(
 
 data class GenericResponse(
     val success: Boolean,
-    val message: String
+    val message: String,
+    val userId: Int? = null,
+    val userName: String? = null
 )

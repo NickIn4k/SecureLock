@@ -174,11 +174,12 @@ fun AdminNewUserScreen(navController: NavController, currentUserId: Int) {
                     return@Button
                 }
 
+                /* Per ora volto opzionale
                 val embedding = faceEmbedding
                 if (embedding == null) {
                     message = "Acquisisci prima il volto"
                     return@Button
-                }
+                }*/
 
                 isLoading = true
                 message = ""
@@ -191,22 +192,33 @@ fun AdminNewUserScreen(navController: NavController, currentUserId: Int) {
                                 fullName = fullName,
                                 username = username,
                                 password = password,
-                                faceEmbedding = null, //Opzionale
+                                faceEmbedding = faceEmbedding,
                                 slotIds = selectedSlots.toList()
                             )
                         )
 
                         val body = response.body()
 
-                        message = when {
-                            response.isSuccessful && body?.success == true -> {
+                        when {
+                            response.code() == 409 -> {
+                                message = body?.message ?: "Username già esistente"
+                            }
+
+                            response.code() == 403 -> {
+                                message = body?.message ?: "Non autorizzato"
+                            }
+
+                            response.code() in 200..299 && body?.success == true -> {
+                                message = "Utente creato correttamente"
                                 delay(1000)
                                 navController.popBackStack()
-                                "Utente creato correttamente"
                             }
-                            body?.message != null -> body.message
-                            else -> "Errore creazione utente"
+
+                            else -> {
+                                message = body?.message ?: "Errore creazione utente"
+                            }
                         }
+
                     } catch (e: Exception) {
                         message = "Errore connessione: ${e.message}"
                     } finally {

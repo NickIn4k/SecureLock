@@ -2,6 +2,7 @@ package com.example.securelock.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Security
@@ -16,7 +17,9 @@ fun SecureLockMenu(
     showDiagnostics: Boolean = false,
     showNewUser: Boolean = false,
     showCredits: Boolean = true,
-    onDiagnosticsClick: () -> Unit = {}
+    showLogout: Boolean = false,
+    onDiagnosticsClick: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
@@ -67,6 +70,28 @@ fun SecureLockMenu(
                 onClick = {
                     menuExpanded = false
                     navController.navigate(Routes.CREDITS)
+                }
+            )
+        }
+
+        if (showLogout) {
+            HorizontalDivider()
+
+            DropdownMenuItem(
+                text = { Text("Logout") },
+                leadingIcon = {
+                    Icon(Icons.Default.Logout, contentDescription = null)
+                },
+                onClick = {
+                    menuExpanded = false
+
+                    // callback per pulizia stato (token, sessione, ecc.)
+                    onLogout()
+
+                    // navigazione al login pulendo lo stack
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(0)
+                    }
                 }
             )
         }

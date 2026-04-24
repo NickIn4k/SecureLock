@@ -43,10 +43,10 @@ fun AppNavigation() {
             AdminNewUserScreen(navController = navController)
         }
 
-        /* TODO CREDITS
+
         composable(Routes.CREDITS) {
             CreditsScreen(navController = navController)
-        }*/
+        }
 
         composable("welcome/{userId}") { backStackEntry ->
 

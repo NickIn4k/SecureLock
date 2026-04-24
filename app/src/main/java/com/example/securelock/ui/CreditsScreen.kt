@@ -1,18 +1,30 @@
 package com.example.securelock.ui
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.securelock.ui.components.SecureLockMenu
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavController) {
+fun CreditsScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -23,7 +35,7 @@ fun HomeScreen(navController: NavController) {
                         showCredits = true,
                         showDiagnostics = false,
                         showNewUser = false,
-                        showLogout = false
+                        showLogout = true
                     )
                 }
             )
@@ -49,7 +61,7 @@ fun HomeScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "SecureLock",
+                        text = "SecureLock - Crediti",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -57,29 +69,12 @@ fun HomeScreen(navController: NavController) {
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Scegli il metodo di accesso",
+                        text = "CREAZZO NICOLA, BASSAN ANDREA",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
-
-                    Button(
-                        onClick = { navController.navigate(Routes.FACE_AUTH) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                    ) {
-                        Text("Riconoscimento facciale")
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    TextButton(
-                        onClick = { navController.navigate(Routes.LOGIN) }
-                    ) {
-                        Text("Login classico")
-                    }
                 }
             }
         }

@@ -26,6 +26,7 @@ fun WelcomeScreen(
                         showCredits = true,
                         showDiagnostics = isAdmin,
                         showNewUser = isAdmin,
+                        showLogout = true,
                         onDiagnosticsClick = {
                             // TODO: HTTP page
                         }

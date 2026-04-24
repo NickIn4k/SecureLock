@@ -94,7 +94,7 @@ fun LoginScreen(navController: NavHostController) {
 
                             if (response.isSuccessful && response.body()?.success == true) {
 
-                                val userId = response.body()?.userId ?: 0
+                                val userId = response.body()?.userId ?: -1
 
                                 message = "Login riuscito"
 

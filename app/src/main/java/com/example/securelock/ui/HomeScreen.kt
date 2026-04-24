@@ -1,84 +1,30 @@
 package com.example.securelock.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.securelock.ui.components.SecureLockMenu
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
-    var menuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("SecureLock") },
                 actions = {
-                    Box {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Apri menu"
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Security,
-                                        contentDescription = "Diagnostica"
-                                    )
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    // TODO SERVE HTTP PAGE
-                                }
-                            )
-
-                            DropdownMenuItem(
-                                text = { },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.PersonAdd,
-                                        contentDescription = "Inserimento nuovo utente"
-                                    )
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    navController.navigate(Routes.ADMIN_NEW_USER)
-                                }
-                            )
-
-                            DropdownMenuItem(
-                                text = { },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Info,
-                                        contentDescription = "Crediti"
-                                    )
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    navController.navigate(Routes.CREDITS)
-                                }
-                            )
-                        }
-                    }
+                    SecureLockMenu(
+                        navController = navController,
+                        showCredits = true,
+                        showDiagnostics = false,
+                        showNewUser = false
+                    )
                 }
             )
         }
@@ -122,8 +68,7 @@ fun HomeScreen(navController: NavController) {
                         onClick = { navController.navigate(Routes.FACE_AUTH) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp),
-                        shape = MaterialTheme.shapes.large
+                            .height(56.dp)
                     ) {
                         Text("Riconoscimento facciale")
                     }

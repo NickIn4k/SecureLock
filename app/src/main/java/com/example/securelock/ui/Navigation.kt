@@ -54,7 +54,7 @@ fun AppNavigation() {
                 ?.getString("userId")
                 ?.toIntOrNull() ?: 0
 
-            WelcomeScreen(userId)
+            WelcomeScreen(userId, navController = navController, isAdmin = false)
         }
     }
 }

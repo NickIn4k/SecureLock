@@ -26,7 +26,7 @@ fun AdminNewUserScreen(navController: NavController) {
     var isScanning by remember { mutableStateOf(false) }
 
     // Selezione cassetti
-    var selectedDrawers by remember { mutableStateOf(setOf<Int>()) }
+    var selectedSlots by remember { mutableStateOf(setOf<Int>()) }
 
     val scope = rememberCoroutineScope()
 
@@ -128,7 +128,7 @@ fun AdminNewUserScreen(navController: NavController) {
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    text = "Selezionati: ${selectedDrawers.size}",
+                    text = "Selezionati: ${selectedSlots.size}",
                     style = MaterialTheme.typography.bodySmall
                 )
 
@@ -137,14 +137,14 @@ fun AdminNewUserScreen(navController: NavController) {
                 // TODO ESEMPIO STATICO - COLLEGA BACKEND
                 // Qui stai usando una lista finta.
                 // In futuro sostituiscila con una chiamata API (GET /drawers)
-                val drawers = listOf(
+                val slots = listOf(
                     1 to "Cassetto 1",
                     2 to "Cassetto 2",
                     3 to "Cassetto 3",
                     4 to "Cassetto 4"
                 )
 
-                drawers.forEach { (id, name) ->
+                slots.forEach { (id, name) ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -152,12 +152,12 @@ fun AdminNewUserScreen(navController: NavController) {
                         Text(name)
 
                         Checkbox(
-                            checked = selectedDrawers.contains(id),
+                            checked = selectedSlots.contains(id),
                             onCheckedChange = { checked ->
-                                selectedDrawers = if (checked)
-                                    selectedDrawers + id
+                                selectedSlots = if (checked)
+                                    selectedSlots + id
                                 else
-                                    selectedDrawers - id
+                                    selectedSlots - id
                             }
                         )
                     }
@@ -191,7 +191,7 @@ fun AdminNewUserScreen(navController: NavController) {
                                 username = username,
                                 password = password,
                                 faceEmbedding = embedding,
-                                drawerIds = selectedDrawers.toList()
+                                slotIds = selectedSlots.toList()
                             )
                         )
 

@@ -39,7 +39,7 @@ data class CreateUserRequest(
     val username: String,
     val password: String,
     val faceEmbedding: List<Float>? = null,
-    val drawerIds: List<Int> = emptyList()
+    val slotIds: List<Int> = emptyList()
 )
 
 // Modelli response

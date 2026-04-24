@@ -10,9 +10,9 @@ object Routes {
     const val HOME = "home"
     const val FACE_AUTH = "face_auth"
     const val LOGIN = "login"
-    const val ADMIN_NEW_USER = "admin_new_user"
-    const val CREDITS = "credits"
-    const val WELCOME = "welcome/{userId}"
+    const val ADMIN_NEW_USER = "admin_new_user/{adminId}"
+    const val CREDITS = "credits/{userId}"
+    const val WELCOME = "welcome/{userId}/{isAdmin}"
 }
 
 @Composable
@@ -39,22 +39,44 @@ fun AppNavigation() {
             LoginScreen(navController = navController)
         }
 
-        composable(Routes.ADMIN_NEW_USER) {
-            AdminNewUserScreen(navController = navController)
+        composable("admin_new_user/{adminId}") { backStackEntry ->
+
+            val adminId = backStackEntry.arguments
+                ?.getString("adminId")
+                ?.toIntOrNull() ?: -1
+
+            AdminNewUserScreen(
+                navController = navController,
+                currentUserId = adminId
+            )
         }
 
+        composable("credits/{userId}") { backStackEntry ->
 
-        composable(Routes.CREDITS) {
-            CreditsScreen(navController = navController)
+            val userId = backStackEntry.arguments
+                ?.getString("userId")
+                ?.toIntOrNull() ?: -1
+
+            CreditsScreen(
+                navController = navController,
+                userId = userId
+            )
         }
 
-        composable("welcome/{userId}") { backStackEntry ->
-
+        composable("welcome/{userId}/{isAdmin}") { backStackEntry ->
             val userId = backStackEntry.arguments
                 ?.getString("userId")
                 ?.toIntOrNull() ?: 0
 
-            WelcomeScreen(userId, navController = navController, isAdmin = false)
+            val isAdmin = backStackEntry.arguments
+                ?.getString("isAdmin")
+                ?.toBoolean() ?: false
+
+            WelcomeScreen(
+                userId = userId,
+                isAdmin = isAdmin,
+                navController = navController
+            )
         }
     }
 }

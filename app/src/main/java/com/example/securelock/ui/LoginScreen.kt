@@ -84,7 +84,6 @@ fun LoginScreen(navController: NavHostController) {
                     message = ""
 
                     scope.launch {
-
                         isLoading = true
 
                         try {
@@ -92,23 +91,25 @@ fun LoginScreen(navController: NavHostController) {
                                 LoginRequest(username, password)
                             )
 
-                            if (response.isSuccessful && response.body()?.success == true) {
+                            val body = response.body()
 
-                                val userId = response.body()?.userId ?: -1
+                            if (response.isSuccessful && body?.success == true) {
+                                val userId = body.userId ?: 0
+                                val isAdmin = body.userRole == "admin"
 
                                 message = "Login riuscito"
 
-                                navController.navigate("welcome/$userId")
-
+                                navController.navigate("welcome/$userId/$isAdmin") {
+                                    popUpTo(Routes.LOGIN) { inclusive = true }
+                                }
                             } else {
-                                message = "Credenziali non valide"
+                                message = body?.message ?: "Credenziali non valide"
                             }
-
                         } catch (e: Exception) {
                             message = "Errore: ${e.message}"
+                        } finally {
+                            isLoading = false
                         }
-
-                        isLoading = false
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

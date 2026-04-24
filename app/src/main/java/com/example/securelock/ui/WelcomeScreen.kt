@@ -23,6 +23,7 @@ fun WelcomeScreen(
                 actions = {
                     SecureLockMenu(
                         navController = navController,
+                        userId = userId,
                         showCredits = true,
                         showDiagnostics = isAdmin,
                         showNewUser = isAdmin,

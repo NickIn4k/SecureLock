@@ -14,6 +14,7 @@ import com.example.securelock.ui.Routes
 @Composable
 fun SecureLockMenu(
     navController: NavController,
+    userId: Int? = null,
     showDiagnostics: Boolean = false,
     showNewUser: Boolean = false,
     showCredits: Boolean = true,
@@ -56,7 +57,9 @@ fun SecureLockMenu(
                 },
                 onClick = {
                     menuExpanded = false
-                    navController.navigate(Routes.ADMIN_NEW_USER)
+                    userId?.let {
+                        navController.navigate("admin_new_user/$it")
+                    }
                 }
             )
         }
@@ -69,7 +72,9 @@ fun SecureLockMenu(
                 },
                 onClick = {
                     menuExpanded = false
-                    navController.navigate(Routes.CREDITS)
+                    userId?.let {
+                        navController.navigate("credits/$it")
+                    }
                 }
             )
         }

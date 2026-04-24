@@ -24,7 +24,7 @@ import com.example.securelock.ui.components.SecureLockMenu
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreditsScreen(navController: NavHostController) {
+fun CreditsScreen(navController: NavHostController, userId: Int) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -32,6 +32,7 @@ fun CreditsScreen(navController: NavHostController) {
                 actions = {
                     SecureLockMenu(
                         navController = navController,
+                        userId = userId,
                         showCredits = true,
                         showDiagnostics = false,
                         showNewUser = false,

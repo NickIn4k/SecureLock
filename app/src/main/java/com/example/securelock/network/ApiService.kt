@@ -35,6 +35,7 @@ data class LoginRequest(
 )
 
 data class CreateUserRequest(
+    val adminUserId: Int,
     val fullName: String,
     val username: String,
     val password: String,
@@ -49,12 +50,15 @@ data class AuthResponse(
     val success: Boolean,
     val message: String,
     val userId: Int?,      // ID dell'utente nel DB => null se accesso negato
-    val userName: String?  // Nome dell'utente => null se accesso negato
+    val userName: String?,  // Nome dell'utente => null se accesso negato
+    val userRole: String?,
+    val isAdmin: Boolean?
 )
 
 data class GenericResponse(
     val success: Boolean,
     val message: String,
     val userId: Int? = null,
-    val userName: String? = null
+    val userName: String? = null,
+    val userRole: String?
 )

@@ -13,7 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun AdminNewUserScreen(navController: NavController) {
+fun AdminNewUserScreen(navController: NavController, currentUserId: Int) {
 
     // ----------- STATE -----------
     var fullName by remember { mutableStateOf("") }
@@ -187,29 +187,31 @@ fun AdminNewUserScreen(navController: NavController) {
                     try {
                         val response = ApiClient.api.createUser(
                             CreateUserRequest(
+                                adminUserId = currentUserId,
                                 fullName = fullName,
                                 username = username,
                                 password = password,
-                                faceEmbedding = embedding,
+                                faceEmbedding = null, //Opzionale
                                 slotIds = selectedSlots.toList()
                             )
                         )
 
-                        if (response.isSuccessful && response.body()?.success == true) {
-                            message = "Utente creato correttamente"
+                        val body = response.body()
 
-                            delay(1000)
-                            navController.popBackStack()
-
-                        } else {
-                            message = "Errore creazione utente"
+                        message = when {
+                            response.isSuccessful && body?.success == true -> {
+                                delay(1000)
+                                navController.popBackStack()
+                                "Utente creato correttamente"
+                            }
+                            body?.message != null -> body.message
+                            else -> "Errore creazione utente"
                         }
-
                     } catch (e: Exception) {
                         message = "Errore connessione: ${e.message}"
+                    } finally {
+                        isLoading = false
                     }
-
-                    isLoading = false
                 }
             },
             modifier = Modifier.fillMaxWidth()

@@ -1,11 +1,16 @@
-package com.example.securelock.ui
+package com.example.securelock.ui.admin.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.example.securelock.network.ApiClient
 import com.example.securelock.network.CreateUserRequest
 import com.example.securelock.ui.components.FaceCapturePreview
@@ -13,73 +18,86 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun AdminNewUserScreen(navController: NavController, currentUserId: Int) {
+fun CreateUserSection(
+    currentUserId: Int,
+    onUserCreated: () -> Unit = {}
+) {
 
-    // ----------- STATE -----------
+    // -------- STATE --------
     var fullName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var faceEmbedding by remember { mutableStateOf<List<Float>?>(null) }
 
+    var selectedSlots by remember { mutableStateOf(setOf<Int>()) }
+
     var message by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
 
-    // Selezione cassetti
-    var selectedSlots by remember { mutableStateOf(setOf<Int>()) }
-
     val scope = rememberCoroutineScope()
 
+    val shape = RoundedCornerShape(18.dp)
+
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.fillMaxWidth()
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
 
         Text(
-            text = "Nuovo utente",
-            style = MaterialTheme.typography.headlineSmall
+            text = "Crea nuovo utente",
+            style = MaterialTheme.typography.titleLarge,
+            color = Color(0xFF16324F)
         )
 
-        // ----------- CARD DATI UTENTE -----------
-        Card {
-            Column(Modifier.padding(16.dp)) {
+        Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = fullName,
-                    onValueChange = { fullName = it },
-                    label = { Text("Nome e cognome") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+        // -------- DATI --------
+        OutlinedTextField(
+            value = fullName,
+            onValueChange = { fullName = it },
+            label = { Text("Nome e cognome") },
+            shape = shape,
+            modifier = Modifier.fillMaxWidth()
+        )
 
-                Spacer(Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+        OutlinedTextField(
+            value = username,
+            onValueChange = { username = it },
+            label = { Text("Username") },
+            shape = shape,
+            modifier = Modifier.fillMaxWidth()
+        )
 
-                Spacer(Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            shape = shape,
+            modifier = Modifier.fillMaxWidth()
+        )
 
-        // ----------- CARD FACE -----------
-        Card {
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // -------- FACE --------
+        Card(
+            shape = shape,
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFF9FBFF)
+            ),
+            border = BorderStroke(1.dp, Color(0x22000000))
+        ) {
             Column(Modifier.padding(16.dp)) {
 
                 Text("Riconoscimento facciale")
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
                     if (faceEmbedding == null)
@@ -88,22 +106,33 @@ fun AdminNewUserScreen(navController: NavController, currentUserId: Int) {
                         "Volto acquisito!"
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Button(
                     onClick = { isScanning = true },
-                    enabled = !isScanning && faceEmbedding == null
+                    enabled = !isScanning && faceEmbedding == null,
+                    shape = shape,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                    .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF7EA8FF),
+                        contentColor = Color.White
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 4.dp
+                    )
                 ) {
                     Text("Acquisisci volto")
                 }
 
-                Spacer(Modifier.height(8.dp))
-
                 if (isScanning) {
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     FaceCapturePreview(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(220.dp),
+                            .height(200.dp),
 
                         onStatusChange = {
                             message = it
@@ -119,24 +148,29 @@ fun AdminNewUserScreen(navController: NavController, currentUserId: Int) {
             }
         }
 
-        // ----------- CARD CASSETTI -----------
-        Card {
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // -------- CASSETTI --------
+        Card(
+            shape = shape,
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFF9FBFF)
+            ),
+            border = BorderStroke(1.dp, Color(0x22000000))
+        ) {
             Column(Modifier.padding(16.dp)) {
 
                 Text("Cassetti assegnati")
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Selezionati: ${selectedSlots.size}",
+                    "Selezionati: ${selectedSlots.size}",
                     style = MaterialTheme.typography.bodySmall
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // TODO ESEMPIO STATICO - COLLEGA BACKEND
-                // Qui stai usando una lista finta.
-                // In futuro sostituiscila con una chiamata API (GET /drawers)
                 val slots = listOf(
                     1 to "Cassetto 1",
                     2 to "Cassetto 2",
@@ -146,8 +180,11 @@ fun AdminNewUserScreen(navController: NavController, currentUserId: Int) {
 
                 slots.forEach { (id, name) ->
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(name)
 
@@ -165,21 +202,26 @@ fun AdminNewUserScreen(navController: NavController, currentUserId: Int) {
             }
         }
 
-        // ----------- SALVATAGGIO -----------
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // -------- SALVA --------
         Button(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF7EA8FF),
+                contentColor = Color.White
+            ),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 4.dp
+            ),
             onClick = {
 
                 if (fullName.isBlank() || username.isBlank() || password.isBlank()) {
                     message = "Compila tutti i campi"
                     return@Button
                 }
-
-                /* Per ora volto opzionale
-                val embedding = faceEmbedding
-                if (embedding == null) {
-                    message = "Acquisisci prima il volto"
-                    return@Button
-                }*/
 
                 isLoading = true
                 message = ""
@@ -208,28 +250,30 @@ fun AdminNewUserScreen(navController: NavController, currentUserId: Int) {
                                 message = body?.message ?: "Non autorizzato"
                             }
 
-                            response.code() in 200..299 && body?.success == true -> {
-                                message = "Utente creato correttamente"
-                                delay(1000)
-                                navController.popBackStack()
+                            response.isSuccessful && body?.success == true -> {
+                                message = "Utente creato"
+                                delay(800)
+                                onUserCreated()
                             }
 
                             else -> {
-                                message = body?.message ?: "Errore creazione utente"
+                                message = body?.message ?: "Errore creazione"
                             }
                         }
 
                     } catch (e: Exception) {
-                        message = "Errore connessione: ${e.message}"
+                        message = "Errore: ${e.message}"
                     } finally {
                         isLoading = false
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            shape = shape
         ) {
             Text("Salva utente")
         }
+
+        Spacer(modifier = Modifier.height(10.dp))
 
         if (isLoading) {
             CircularProgressIndicator()
@@ -237,10 +281,6 @@ fun AdminNewUserScreen(navController: NavController, currentUserId: Int) {
 
         if (message.isNotBlank()) {
             Text(message)
-        }
-
-        TextButton(onClick = { navController.popBackStack() }) {
-            Text("Indietro")
         }
     }
 }

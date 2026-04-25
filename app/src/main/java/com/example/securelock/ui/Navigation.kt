@@ -4,15 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.securelock.ui.admin.AdminNewUserScreen
 
 // Routes
 object Routes {
     const val HOME = "home"
     const val FACE_AUTH = "face_auth"
     const val LOGIN = "login"
-    const val ADMIN_NEW_USER = "admin_new_user/{adminId}"
-    const val CREDITS = "credits/{userId}"
-    const val WELCOME = "welcome/{userId}/{isAdmin}"
 }
 
 @Composable
@@ -47,7 +45,7 @@ fun AppNavigation() {
 
             AdminNewUserScreen(
                 navController = navController,
-                currentUserId = adminId
+                userId = adminId
             )
         }
 

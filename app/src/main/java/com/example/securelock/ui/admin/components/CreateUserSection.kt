@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.securelock.network.ApiClient
 import com.example.securelock.network.CreateUserRequest
+import com.example.securelock.network.FaceCheckRequest
+import com.example.securelock.network.SaveFaceRequest
 import com.example.securelock.ui.components.FaceCapturePreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -28,6 +30,7 @@ fun CreateUserSection(
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var faceEmbedding by remember { mutableStateOf<List<Float>?>(null) }
+    var isFaceCheckedOk by remember { mutableStateOf(false) } // Cerca volti duplicati nel db
 
     var selectedSlots by remember { mutableStateOf(setOf<Int>()) }
 
@@ -139,9 +142,39 @@ fun CreateUserSection(
                         },
 
                         onEmbeddingCaptured = { embedding ->
-                            faceEmbedding = embedding
-                            isScanning = false
-                            message = "Volto acquisito correttamente"
+                            scope.launch {
+                                isScanning = false
+                                message = "Controllo volto nel database..."
+
+                                try {
+                                    val response = ApiClient.api.checkFace(
+                                        FaceCheckRequest(faceEmbedding = embedding)
+                                    )
+
+                                    val body = response.body()
+
+                                    if (response.code() == 409 || body?.duplicate == true) {
+                                        message = body?.message ?: "Volto già registrato"
+                                        faceEmbedding = null
+                                        isFaceCheckedOk = false
+                                        return@launch
+                                    }
+
+                                    if (response.isSuccessful && body?.success == true) {
+                                        faceEmbedding = embedding
+                                        isFaceCheckedOk = true
+                                        message = "Volto libero, pronto per il salvataggio"
+                                    } else {
+                                        message = body?.message ?: "Errore controllo volto"
+                                        faceEmbedding = null
+                                        isFaceCheckedOk = false
+                                    }
+                                } catch (e: Exception) {
+                                    message = "Errore connessione: ${e.message}"
+                                    faceEmbedding = null
+                                    isFaceCheckedOk = false
+                                }
+                            }
                         }
                     )
                 }
@@ -228,37 +261,70 @@ fun CreateUserSection(
 
                 scope.launch {
                     try {
-                        val response = ApiClient.api.createUser(
+                        val createResponse = ApiClient.api.createUser(
                             CreateUserRequest(
                                 adminUserId = currentUserId,
                                 fullName = fullName,
                                 username = username,
                                 password = password,
-                                faceEmbedding = faceEmbedding,
                                 slotIds = selectedSlots.toList()
                             )
                         )
 
-                        val body = response.body()
+                        val createBody = createResponse.body()
 
                         when {
-                            response.code() == 409 -> {
-                                message = body?.message ?: "Username già esistente"
+                            createResponse.code() == 409 -> {
+                                message = createBody?.message ?: "Username già esistente"
+                                return@launch
                             }
 
-                            response.code() == 403 -> {
-                                message = body?.message ?: "Non autorizzato"
+                            createResponse.code() == 403 -> {
+                                message = createBody?.message ?: "Non autorizzato"
+                                return@launch
                             }
 
-                            response.isSuccessful && body?.success == true -> {
-                                message = "Utente creato"
-                                delay(800)
-                                onUserCreated()
+                            !createResponse.isSuccessful || createBody?.success != true -> {
+                                message = createBody?.message ?: "Errore creazione utente"
+                                return@launch
                             }
+                        }
 
-                            else -> {
-                                message = body?.message ?: "Errore creazione"
-                            }
+                        val createdUserId = createBody?.userId
+                        if (createdUserId == null) {
+                            message = "Utente creato ma userId mancante"
+                            return@launch
+                        }
+
+                        // Se il volto non è stato acquisito, finisco qui
+                        if (faceEmbedding == null) {
+                            message = "Utente creato correttamente"
+                            delay(800)
+                            onUserCreated()
+                            return@launch
+                        }
+
+                        // Se il volto era stato acquisito e controllato prima, lo salvo ora
+                        if (!isFaceCheckedOk) {
+                            message = "Volto non ancora validato"
+                            return@launch
+                        }
+
+                        val saveFaceResponse = ApiClient.api.saveFace(
+                            SaveFaceRequest(
+                                userId = createdUserId,
+                                faceEmbedding = faceEmbedding!!
+                            )
+                        )
+
+                        val saveFaceBody = saveFaceResponse.body()
+
+                        if (saveFaceResponse.isSuccessful && saveFaceBody?.success == true) {
+                            message = "Utente e volto salvati correttamente"
+                            delay(800)
+                            onUserCreated()
+                        } else {
+                            message = saveFaceBody?.message ?: "Errore salvataggio volto"
                         }
 
                     } catch (e: Exception) {

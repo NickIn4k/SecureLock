@@ -6,24 +6,31 @@ import retrofit2.http.POST
 
 interface ApiService {
 
-    // Endpoint retrofit
-    @POST("api/auth/face")
-    suspend fun authWithFace(
-        @Body body: FaceAuthRequest
-    ): Response<AuthResponse>
-
     @POST("api/auth/login")
     suspend fun login(
         @Body body: LoginRequest
     ): Response<AuthResponse>
 
-    @POST("/api/admin/users")
+    @POST("api/auth/face")
+    suspend fun authWithFace(
+        @Body body: FaceAuthRequest
+    ): Response<AuthResponse>
+
+    @POST("api/admin/users")
     suspend fun createUser(
         @Body request: CreateUserRequest
+    ): Response<CreateUserResponse>
+
+    @POST("api/admin/users/face/check")
+    suspend fun checkFace(
+        @Body request: FaceCheckRequest
+    ): Response<FaceCheckResponse>
+
+    @POST("api/admin/users/face")
+    suspend fun saveFace(
+        @Body request: SaveFaceRequest
     ): Response<GenericResponse>
 }
-
-// Modelli request
 
 data class FaceAuthRequest(
     val embedding: List<Float>
@@ -39,18 +46,36 @@ data class CreateUserRequest(
     val fullName: String,
     val username: String,
     val password: String,
-    val faceEmbedding: List<Float>? = null,
     val slotIds: List<Int> = emptyList()
 )
 
-// Modelli response
+data class CreateUserResponse(
+    val success: Boolean,
+    val message: String,
+    val userId: Int? = null
+)
 
-// Risposta uguale per tutti e tre i metodi di autenticazione
+data class FaceCheckRequest(
+    val faceEmbedding: List<Float>
+)
+
+data class FaceCheckResponse(
+    val success: Boolean,
+    val duplicate: Boolean,
+    val matchedUserId: Int? = null,
+    val message: String
+)
+
+data class SaveFaceRequest(
+    val userId: Int,
+    val faceEmbedding: List<Float>
+)
+
 data class AuthResponse(
     val success: Boolean,
     val message: String,
-    val userId: Int?,      // ID dell'utente nel DB => null se accesso negato
-    val userName: String?,  // Nome dell'utente => null se accesso negato
+    val userId: Int?,
+    val userName: String?,
     val userRole: String?,
     val isAdmin: Boolean?
 )
@@ -60,5 +85,5 @@ data class GenericResponse(
     val message: String,
     val userId: Int? = null,
     val userName: String? = null,
-    val userRole: String?
+    val userRole: String? = null
 )

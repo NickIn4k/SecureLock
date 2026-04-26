@@ -2,7 +2,9 @@ package com.example.securelock.network
 
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -35,6 +37,22 @@ interface ApiService {
     suspend fun adminLogin(
         @Body body: BackLoginRequest
     ): Response<AuthResponse>
+
+    @GET("api/user/dashboard")
+    suspend fun getDashboard(
+        @Query("userId") userId: Int
+    ): Response<DashboardResponse>
+
+    @GET("api/slot/detail")
+    suspend fun getSlotDetail(
+        @Query("userId") userId: Int,
+        @Query("slotId") slotId: Int
+    ): Response<SlotDetailResponse>
+
+    @POST("api/slot/action")
+    suspend fun slotAction(
+        @Body request: SlotActionRequest
+    ): Response<GenericResponse>
 }
 
 data class FaceAuthRequest(
@@ -88,6 +106,43 @@ data class AuthResponse(
     val userRole: String?,
     val isAdmin: Boolean?,
     val url: String?
+)
+
+data class DashboardResponse(
+    val success: Boolean,
+    val message: String,
+    val userId: Int,
+    val userName: String?,
+    val username: String?,
+    val userRole: String?,
+    val isAdmin: Boolean,
+    val slots: List<DashboardSlot> = emptyList()
+)
+
+data class DashboardSlot(
+    val slotId: Int,
+    val status: String,
+    val hasKey: Boolean,
+    val lastUpdated: String? = null,
+    val vehicleName: String? = null,
+    val vehicleType: String? = null
+)
+
+data class SlotDetailResponse(
+    val success: Boolean,
+    val message: String,
+    val slotId: Int? = null,
+    val status: String? = null,
+    val hasKey: Boolean? = null,
+    val lastUpdated: String? = null,
+    val vehicleName: String? = null,
+    val vehicleType: String? = null
+)
+
+data class SlotActionRequest(
+    val userId: Int,
+    val slotId: Int,
+    val action: String
 )
 
 data class GenericResponse(

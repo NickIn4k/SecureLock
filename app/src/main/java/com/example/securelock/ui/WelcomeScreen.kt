@@ -1,27 +1,29 @@
 package com.example.securelock.ui
 
-import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.securelock.network.ApiClient
-import com.example.securelock.network.BackLoginRequest
+import com.example.securelock.network.DashboardResponse
+import com.example.securelock.network.DashboardSlot
 import com.example.securelock.ui.components.SecureLockMenu
 import kotlinx.coroutines.launch
-import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,12 +33,35 @@ fun WelcomeScreen(
     navController: NavController
 ) {
     val scope = rememberCoroutineScope()
+
+    var dashboard by remember { mutableStateOf<DashboardResponse?>(null) }
+    var message by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(userId) {
+        isLoading = true
+        try {
+            val response = ApiClient.api.getDashboard(userId)
+            val body = response.body()
+
+            if (response.isSuccessful && body?.success == true) {
+                dashboard = body
+            } else {
+                message = body?.message ?: "Errore caricamento dashboard"
+            }
+
+        } catch (e: Exception) {
+            message = "Errore connessione: ${e.message}"
+        } finally {
+            isLoading = false
+        }
+    }
+
     val cardShape = RoundedCornerShape(28.dp)
-    val context = LocalContext.current
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // SFONDO GRADIENTE
+        // BACKGROUND
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -53,9 +78,11 @@ fun WelcomeScreen(
 
         Scaffold(
             containerColor = Color.Transparent,
+
+            // TOP BAR CON MENU
             topBar = {
                 TopAppBar(
-                    title = {},
+                    title = { Text("SecureLock") },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
                         scrolledContainerColor = Color.Transparent
@@ -75,98 +102,121 @@ fun WelcomeScreen(
                                 showNewUser = isAdmin,
                                 showLogout = true,
                                 onDiagnosticsClick = {
-                                    scope.launch {
-                                        try {
-                                            val response = ApiClient.api.adminLogin(
-                                                BackLoginRequest(userId)
-                                            )
-
-                                            if (response.isSuccessful) {
-                                                val body = response.body()
-                                                val url = body?.url
-
-                                                if (!url.isNullOrBlank()) {
-                                                    val intent = Intent(
-                                                        Intent.ACTION_VIEW,
-                                                        url.toUri()
-                                                    )
-                                                    context.startActivity(intent)
-                                                }
-                                            }
-                                        } catch (_: Exception) {
-                                            // gestisci errore se vuoi mostrare un Toast o un dialog
-                                        }
-                                    }
+                                    // TODO
                                 }
                             )
                         }
                     }
                 )
             }
+
         ) { paddingValues ->
 
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
+                // CARD UTENTE
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
                     shape = cardShape,
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    border = BorderStroke(
-                        1.dp,
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color(0x55B7A6FF),
-                                Color(0x558FD3FF)
-                            )
-                        )
-                    ),
-                    elevation = CardDefaults.cardElevation(10.dp)
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0x22000000)),
+                    elevation = CardDefaults.cardElevation(10.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(28.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Column(Modifier.padding(24.dp)) {
 
                         Text(
                             text = "Benvenuto",
                             style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF16324F)
+                            fontWeight = FontWeight.Bold
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(Modifier.height(8.dp))
+
+                        Text("ID: $userId")
 
                         Text(
-                            text = "Utente #$userId",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color(0xFF5E6B7A)
+                            text = if (isAdmin) "Ruolo: admin" else "Ruolo: user"
                         )
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                        if (message.isNotBlank()) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(message, color = Color(0xFFC62828))
+                        }
+                    }
+                }
 
-                        Text(
-                            text = if (isAdmin)
-                                "Accesso amministratore attivo"
-                            else
-                                "Accesso standard",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Color(0xFF2E3A4B)
-                        )
+                // 🔐 SEZIONE SLOT
+                Text(
+                    text = "I tuoi cassetti",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
 
-                        Spacer(modifier = Modifier.height(32.dp))
+                if (isLoading) {
+                    CircularProgressIndicator()
+                } else {
+
+                    val slots = dashboard?.slots.orEmpty().take(3)
+
+                    if (slots.isEmpty()) {
+                        Text("Nessun cassetto assegnato")
+                    } else {
+                        slots.forEach { slot ->
+                            SlotCardItem(
+                                slot = slot,
+                                onClick = {
+                                    navController.navigate("slot_detail/$userId/${slot.slotId}")
+                                }
+                            )
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SlotCardItem(
+    slot: DashboardSlot,
+    onClick: () -> Unit
+) {
+    val isOpen = slot.status.equals("open", ignoreCase = true)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0x22000000)),
+        elevation = CardDefaults.cardElevation(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (isOpen) Icons.Default.LockOpen else Icons.Default.Lock,
+                contentDescription = null
+            )
+
+            Spacer(Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Cassetto ${slot.slotId}", fontWeight = FontWeight.SemiBold)
+                Text("Stato: ${slot.status}")
+                Text("Chiave: ${if (slot.hasKey) "presente" else "assente"}")
+                Text(slot.vehicleName ?: "Nessun veicolo")
+            }
+
+            Icon(Icons.Default.ChevronRight, contentDescription = null)
         }
     }
 }

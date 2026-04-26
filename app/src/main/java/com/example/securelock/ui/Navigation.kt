@@ -11,8 +11,9 @@ object Routes {
     const val HOME = "home"
     const val FACE_AUTH = "face_auth"
     const val LOGIN = "login"
-
     const val CREDITS = "credits"
+    const val WELCOME = "welcome/{userId}/{isAdmin}"
+    const val SLOT_DETAIL = "slot_detail/{userId}/{slotId}"
 }
 
 @Composable
@@ -67,6 +68,17 @@ fun AppNavigation() {
             WelcomeScreen(
                 userId = userId,
                 isAdmin = isAdmin,
+                navController = navController
+            )
+        }
+
+        composable("slot_detail/{userId}/{slotId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull() ?: 0
+            val slotId = backStackEntry.arguments?.getString("slotId")?.toIntOrNull() ?: 0
+
+            SlotDetailScreen(
+                userId = userId,
+                slotId = slotId,
                 navController = navController
             )
         }

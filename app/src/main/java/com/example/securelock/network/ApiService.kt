@@ -30,6 +30,11 @@ interface ApiService {
     suspend fun saveFace(
         @Body request: SaveFaceRequest
     ): Response<GenericResponse>
+
+    @POST("api/admin/login")
+    suspend fun adminLogin(
+        @Body body: BackLoginRequest
+    ): Response<AuthResponse>
 }
 
 data class FaceAuthRequest(
@@ -39,6 +44,10 @@ data class FaceAuthRequest(
 data class LoginRequest(
     val username: String,
     val password: String
+)
+
+data class BackLoginRequest(
+    val userId: Int
 )
 
 data class CreateUserRequest(
@@ -77,7 +86,8 @@ data class AuthResponse(
     val userId: Int?,
     val userName: String?,
     val userRole: String?,
-    val isAdmin: Boolean?
+    val isAdmin: Boolean?,
+    val url: String?
 )
 
 data class GenericResponse(

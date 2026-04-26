@@ -1,20 +1,27 @@
 package com.example.securelock.ui
 
+import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.securelock.network.ApiClient
+import com.example.securelock.network.BackLoginRequest
 import com.example.securelock.ui.components.SecureLockMenu
+import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,8 +30,9 @@ fun WelcomeScreen(
     isAdmin: Boolean,
     navController: NavController
 ) {
-
+    val scope = rememberCoroutineScope()
     val cardShape = RoundedCornerShape(28.dp)
+    val context = LocalContext.current
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -67,7 +75,28 @@ fun WelcomeScreen(
                                 showNewUser = isAdmin,
                                 showLogout = true,
                                 onDiagnosticsClick = {
-                                    // TODO
+                                    scope.launch {
+                                        try {
+                                            val response = ApiClient.api.adminLogin(
+                                                BackLoginRequest(userId)
+                                            )
+
+                                            if (response.isSuccessful) {
+                                                val body = response.body()
+                                                val url = body?.url
+
+                                                if (!url.isNullOrBlank()) {
+                                                    val intent = Intent(
+                                                        Intent.ACTION_VIEW,
+                                                        url.toUri()
+                                                    )
+                                                    context.startActivity(intent)
+                                                }
+                                            }
+                                        } catch (_: Exception) {
+                                            // gestisci errore se vuoi mostrare un Toast o un dialog
+                                        }
+                                    }
                                 }
                             )
                         }

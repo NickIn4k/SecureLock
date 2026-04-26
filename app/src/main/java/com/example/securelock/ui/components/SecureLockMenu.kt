@@ -99,7 +99,7 @@ fun SecureLockMenu(
 
         if (showCredits) {
             menuItem("Crediti", Icons.Default.Info) {
-                userId?.let { navController.navigate("credits/$it") }
+                navController.navigate(Routes.CREDITS)
             }
         }
 

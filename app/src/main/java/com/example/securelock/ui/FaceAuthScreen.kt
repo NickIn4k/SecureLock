@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.securelock.network.ApiClient
+import com.example.securelock.network.AuthResponse
 import com.example.securelock.network.FaceAuthRequest
 import com.example.securelock.ui.components.FaceCapturePreview
 import kotlinx.coroutines.launch
@@ -31,9 +32,15 @@ fun FaceAuthScreen(navController: NavController) {
                     sendToBackend(
                         embedding = embedding,
 
-                        onSuccess = { userId ->
-                            statusMessage = "Accesso autorizzato!"
-                            navController.navigate("welcome/$userId")
+                        onSuccess = { body ->
+                            statusMessage = "Login riuscito"
+
+                            val userId = body.userId ?: 0
+                            val isAdmin = body.isAdmin ?: (body.userRole == "admin")
+
+                            navController.navigate("welcome/$userId/$isAdmin") {
+                                popUpTo(Routes.FACE_AUTH) { inclusive = true }
+                            }
                         },
 
                         onFailure = {
@@ -72,7 +79,7 @@ fun FaceAuthScreen(navController: NavController) {
 
 private suspend fun sendToBackend(
     embedding: List<Float>,
-    onSuccess: (Int) -> Unit,
+    onSuccess: (AuthResponse) -> Unit,
     onFailure: () -> Unit,
     onError: () -> Unit
 ) {
@@ -81,9 +88,10 @@ private suspend fun sendToBackend(
             FaceAuthRequest(embedding)
         )
 
-        if (response.isSuccessful && response.body()?.success == true) {
-            val userId = response.body()?.userId ?: 0
-            onSuccess(userId)
+        val body = response.body()
+
+        if (response.isSuccessful && body?.success == true) {
+            onSuccess(body)
         } else {
             onFailure()
         }

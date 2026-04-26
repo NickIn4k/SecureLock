@@ -103,10 +103,11 @@ fun CreateUserSection(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    if (faceEmbedding == null)
-                        "Nessun volto acquisito"
-                    else
-                        "Volto acquisito!"
+                    when {
+                        faceEmbedding == null -> "Nessun volto acquisito"
+                        isFaceCheckedOk -> "Volto acquisito e verificato"
+                        else -> "Volto acquisito"
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -207,8 +208,7 @@ fun CreateUserSection(
                 val slots = listOf(
                     1 to "Cassetto 1",
                     2 to "Cassetto 2",
-                    3 to "Cassetto 3",
-                    4 to "Cassetto 4"
+                    3 to "Cassetto 3"
                 )
 
                 slots.forEach { (id, name) ->

@@ -6,27 +6,27 @@ import retrofit2.http.POST
 
 interface ApiService {
 
-    @POST("api/auth/login")
+    @POST("api/auth/login/password")
     suspend fun login(
         @Body body: LoginRequest
     ): Response<AuthResponse>
 
-    @POST("api/auth/face")
+    @POST("api/auth/login/face") //Login con volto
     suspend fun authWithFace(
         @Body body: FaceAuthRequest
     ): Response<AuthResponse>
 
-    @POST("api/admin/users")
+    @POST("api/admin/insertuser") //Crea utente
     suspend fun createUser(
         @Body request: CreateUserRequest
     ): Response<CreateUserResponse>
 
-    @POST("api/admin/users/face/check")
+    @POST("api/admin/face/checkduplicati") //Check duplicati volto
     suspend fun checkFace(
         @Body request: FaceCheckRequest
     ): Response<FaceCheckResponse>
 
-    @POST("api/admin/users/face")
+    @POST("api/admin/face/save") //Salva volto
     suspend fun saveFace(
         @Body request: SaveFaceRequest
     ): Response<GenericResponse>

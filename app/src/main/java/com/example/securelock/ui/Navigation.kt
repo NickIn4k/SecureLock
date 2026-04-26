@@ -11,6 +11,8 @@ object Routes {
     const val HOME = "home"
     const val FACE_AUTH = "face_auth"
     const val LOGIN = "login"
+
+    const val CREDITS = "credits"
 }
 
 @Composable
@@ -49,16 +51,8 @@ fun AppNavigation() {
             )
         }
 
-        composable("credits/{userId}") { backStackEntry ->
-
-            val userId = backStackEntry.arguments
-                ?.getString("userId")
-                ?.toIntOrNull() ?: -1
-
-            CreditsScreen(
-                navController = navController,
-                userId = userId
-            )
+        composable(Routes.CREDITS) {
+            CreditsScreen(navController = navController)
         }
 
         composable("welcome/{userId}/{isAdmin}") { backStackEntry ->

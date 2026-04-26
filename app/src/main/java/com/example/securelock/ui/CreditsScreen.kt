@@ -21,8 +21,7 @@ import com.example.securelock.ui.components.SecureLockMenu
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreditsScreen(navController: NavHostController, userId: Int) {
-
+fun CreditsScreen(navController: NavHostController) {
     val cardShape = RoundedCornerShape(28.dp)
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -66,7 +65,7 @@ fun CreditsScreen(navController: NavHostController, userId: Int) {
                         ) {
                             SecureLockMenu(
                                 navController = navController,
-                                userId = userId,
+                                userId = null,
                                 showCredits = true,
                                 showDiagnostics = false,
                                 showNewUser = false,

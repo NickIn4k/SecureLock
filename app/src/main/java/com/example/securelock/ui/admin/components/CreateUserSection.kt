@@ -22,7 +22,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun CreateUserSection(
     currentUserId: Int,
-    onUserCreated: () -> Unit = {}
+    onUserCreated: () -> Unit = {},
+    onMessage: (String) -> Unit = {}
 ) {
 
     // -------- STATE --------
@@ -34,7 +35,6 @@ fun CreateUserSection(
 
     var selectedSlots by remember { mutableStateOf(setOf<Int>()) }
 
-    var message by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
 
@@ -43,7 +43,7 @@ fun CreateUserSection(
     val shape = RoundedCornerShape(18.dp)
 
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(18.dp)
@@ -118,7 +118,7 @@ fun CreateUserSection(
                     shape = shape,
                     modifier = Modifier
                         .fillMaxWidth()
-                    .height(56.dp),
+                        .height(56.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF7EA8FF),
                         contentColor = Color.White
@@ -137,15 +137,13 @@ fun CreateUserSection(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp),
-
                         onStatusChange = {
-                            message = it
+                            onMessage(it)
                         },
-
                         onEmbeddingCaptured = { embedding ->
                             scope.launch {
                                 isScanning = false
-                                message = "Controllo volto nel database..."
+                                onMessage("Controllo volto nel database...")
 
                                 try {
                                     val response = ApiClient.api.checkFace(
@@ -155,7 +153,7 @@ fun CreateUserSection(
                                     val body = response.body()
 
                                     if (response.code() == 409 || body?.duplicate == true) {
-                                        message = body?.message ?: "Volto già registrato"
+                                        onMessage(body?.message ?: "Volto già registrato")
                                         faceEmbedding = null
                                         isFaceCheckedOk = false
                                         return@launch
@@ -164,14 +162,14 @@ fun CreateUserSection(
                                     if (response.isSuccessful && body?.success == true) {
                                         faceEmbedding = embedding
                                         isFaceCheckedOk = true
-                                        message = "Volto libero, pronto per il salvataggio"
+                                        onMessage("Volto libero, pronto per il salvataggio")
                                     } else {
-                                        message = body?.message ?: "Errore controllo volto"
+                                        onMessage(body?.message ?: "Errore controllo volto")
                                         faceEmbedding = null
                                         isFaceCheckedOk = false
                                     }
                                 } catch (e: Exception) {
-                                    message = "Errore connessione: ${e.message}"
+                                    onMessage("Errore connessione: ${e.message}")
                                     faceEmbedding = null
                                     isFaceCheckedOk = false
                                 }
@@ -252,12 +250,11 @@ fun CreateUserSection(
             onClick = {
 
                 if (fullName.isBlank() || username.isBlank() || password.isBlank()) {
-                    message = "Compila tutti i campi"
+                    onMessage("Compila tutti i campi")
                     return@Button
                 }
 
                 isLoading = true
-                message = ""
 
                 scope.launch {
                     try {
@@ -275,30 +272,30 @@ fun CreateUserSection(
 
                         when {
                             createResponse.code() == 409 -> {
-                                message = createBody?.message ?: "Username già esistente"
+                                onMessage(createBody?.message ?: "Username già esistente")
                                 return@launch
                             }
 
                             createResponse.code() == 403 -> {
-                                message = createBody?.message ?: "Non autorizzato"
+                                onMessage(createBody?.message ?: "Non autorizzato")
                                 return@launch
                             }
 
                             !createResponse.isSuccessful || createBody?.success != true -> {
-                                message = createBody?.message ?: "Errore creazione utente"
+                                onMessage(createBody?.message ?: "Errore creazione utente")
                                 return@launch
                             }
                         }
 
-                        val createdUserId = createBody?.userId
+                        val createdUserId = createBody.userId
                         if (createdUserId == null) {
-                            message = "Utente creato ma userId mancante"
+                            onMessage("Utente creato ma userId mancante")
                             return@launch
                         }
 
                         // Se il volto non è stato acquisito, finisco qui
                         if (faceEmbedding == null) {
-                            message = "Utente creato correttamente"
+                            onMessage("Utente creato correttamente")
                             delay(800)
                             onUserCreated()
                             return@launch
@@ -306,7 +303,7 @@ fun CreateUserSection(
 
                         // Se il volto era stato acquisito e controllato prima, lo salvo ora
                         if (!isFaceCheckedOk) {
-                            message = "Volto non ancora validato"
+                            onMessage("Volto non ancora validato")
                             return@launch
                         }
 
@@ -320,15 +317,15 @@ fun CreateUserSection(
                         val saveFaceBody = saveFaceResponse.body()
 
                         if (saveFaceResponse.isSuccessful && saveFaceBody?.success == true) {
-                            message = "Utente e volto salvati correttamente"
+                            onMessage("Utente e volto salvati correttamente")
                             delay(800)
                             onUserCreated()
                         } else {
-                            message = saveFaceBody?.message ?: "Errore salvataggio volto"
+                            onMessage(saveFaceBody?.message ?: "Errore salvataggio volto")
                         }
 
                     } catch (e: Exception) {
-                        message = "Errore: ${e.message}"
+                        onMessage("Errore: ${e.message}")
                     } finally {
                         isLoading = false
                     }
@@ -343,10 +340,6 @@ fun CreateUserSection(
 
         if (isLoading) {
             CircularProgressIndicator()
-        }
-
-        if (message.isNotBlank()) {
-            Text(message)
         }
     }
 }

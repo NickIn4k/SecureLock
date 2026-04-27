@@ -17,6 +17,7 @@ import com.example.securelock.ui.admin.components.AdminActionSelector
 import com.example.securelock.ui.admin.components.CreateUserSection
 import com.example.securelock.ui.admin.components.DeleteUserSection
 import com.example.securelock.ui.components.SecureLockMenu
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +27,9 @@ fun AdminNewUserScreen(
 ) {
     var selectedAction by remember { mutableStateOf(AdminAction.CREATE) }
     val cardShape = RoundedCornerShape(28.dp)
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -45,6 +49,15 @@ fun AdminNewUserScreen(
 
         Scaffold(
             containerColor = Color.Transparent,
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState) { data ->
+                    Snackbar(
+                        snackbarData = data,
+                        containerColor = Color.Red,
+                        contentColor = Color.White
+                    )
+                }
+            },
             topBar = {
                 TopAppBar(
                     title = {},
@@ -130,6 +143,11 @@ fun AdminNewUserScreen(
                                     currentUserId = userId,
                                     onUserCreated = {
                                         navController.popBackStack()
+                                    },
+                                    onMessage = { msg ->
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(msg)
+                                        }
                                     }
                                 )
                             }

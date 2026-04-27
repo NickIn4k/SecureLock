@@ -1,5 +1,6 @@
 package com.example.securelock.ui
 
+import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,10 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.navigation.NavController
 import com.example.securelock.network.ApiClient
+import com.example.securelock.network.BackLoginRequest
 import com.example.securelock.network.DashboardResponse
 import com.example.securelock.network.DashboardSlot
 import com.example.securelock.ui.components.SecureLockMenu
@@ -33,6 +37,7 @@ fun WelcomeScreen(
     navController: NavController
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     var dashboard by remember { mutableStateOf<DashboardResponse?>(null) }
     var message by remember { mutableStateOf("") }
@@ -102,7 +107,36 @@ fun WelcomeScreen(
                                 showNewUser = isAdmin,
                                 showLogout = true,
                                 onDiagnosticsClick = {
-                                    // TODO
+                                    scope.launch {
+                                        try {
+                                            val response = ApiClient.api.adminLogin(
+                                                BackLoginRequest(
+                                                    userId
+                                                )
+                                            )
+
+                                            val body = response.body()
+
+                                            if (response.isSuccessful && body?.success == true) {
+
+                                                val url = body.url // già con token dentro
+
+                                                if (!url.isNullOrBlank()) {
+                                                    val intent = Intent(
+                                                        Intent.ACTION_VIEW,
+                                                        url.toUri()
+                                                    )
+                                                    context.startActivity(intent)
+                                                }
+
+                                            } else {
+                                                message = body?.message ?: "Errore apertura dashboard"
+                                            }
+
+                                        } catch (e: Exception) {
+                                            message = "Errore: ${e.message}"
+                                        }
+                                    }
                                 }
                             )
                         }

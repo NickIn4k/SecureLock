@@ -105,6 +105,7 @@ data class AuthResponse(
     val userName: String?,
     val userRole: String?,
     val isAdmin: Boolean?,
+    val buildingId: Int?,
     val url: String?
 )
 
@@ -116,6 +117,7 @@ data class DashboardResponse(
     val username: String?,
     val userRole: String?,
     val isAdmin: Boolean,
+    val buildingId: Int? = null,
     val slots: List<DashboardSlot> = emptyList()
 )
 
@@ -136,7 +138,8 @@ data class SlotDetailResponse(
     val hasKey: Boolean? = null,
     val lastUpdated: String? = null,
     val vehicleName: String? = null,
-    val vehicleType: String? = null
+    val vehicleType: String? = null,
+    val buildingId: Int? = null
 )
 
 data class SlotActionRequest(

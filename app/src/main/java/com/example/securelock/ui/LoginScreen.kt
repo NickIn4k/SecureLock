@@ -196,7 +196,7 @@ fun LoginScreen(navController: NavHostController) {
 
                                     if (response.isSuccessful && body?.success == true) {
                                         val userId = body.userId ?: 0
-                                        val isAdmin = body.userRole == "admin"
+                                        val isAdmin = body.isAdmin ?: (body.userRole == "admin")
 
                                         message = "Login riuscito"
 

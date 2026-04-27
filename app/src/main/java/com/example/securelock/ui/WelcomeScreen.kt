@@ -63,6 +63,9 @@ fun WelcomeScreen(
     }
 
     val cardShape = RoundedCornerShape(28.dp)
+    val userName = dashboard?.userName ?: "Utente"
+    val role = dashboard?.userRole ?: "user"
+    val buildingId = dashboard?.buildingId
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -173,6 +176,7 @@ fun WelcomeScreen(
                         Spacer(Modifier.height(8.dp))
 
                         Text("ID: $userId")
+                        Text("Nome: $userName")
 
                         Text(
                             text = if (isAdmin) "Ruolo: admin" else "Ruolo: user"
@@ -221,19 +225,17 @@ fun SlotCardItem(
     slot: DashboardSlot,
     onClick: () -> Unit
 ) {
-    val isOpen = slot.status.equals("open", ignoreCase = true)
+    val isOpen = slot.status.equals("open", true)
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0x22000000)),
-        elevation = CardDefaults.cardElevation(8.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
         Row(
-            modifier = Modifier.padding(18.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -241,13 +243,12 @@ fun SlotCardItem(
                 contentDescription = null
             )
 
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text("Cassetto ${slot.slotId}", fontWeight = FontWeight.SemiBold)
+                Text("Cassetto ${slot.slotId}")
                 Text("Stato: ${slot.status}")
-                Text("Chiave: ${if (slot.hasKey) "presente" else "assente"}")
-                Text(slot.vehicleName ?: "Nessun veicolo")
+                Text("Chiave: ${if (slot.hasKey) "Presente" else "Assente"}")
             }
 
             Icon(Icons.Default.ChevronRight, contentDescription = null)

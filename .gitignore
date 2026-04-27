@@ -13,3 +13,4 @@
 .externalNativeBuild
 .cxx
 local.properties
+/ESP32_code/secrets.h

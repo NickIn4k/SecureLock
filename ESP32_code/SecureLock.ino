@@ -2,7 +2,7 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <ESP32Servo.h>
-#include "secrets.h" // Credenziali e dati (come .env in Node/Kt)
+#include "secrets.example.h" // Credenziali e dati (come .env in Node/Kt)
 
 // Numero cassetti
 const int NUM_DRAWERS = 3;

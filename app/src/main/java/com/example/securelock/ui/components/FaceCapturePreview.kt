@@ -30,6 +30,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import java.util.concurrent.Executors
+import kotlin.text.compareTo
 
 @androidx.annotation.OptIn(ExperimentalGetImage::class)
 @Composable
@@ -44,6 +45,17 @@ fun FaceCapturePreview(
     var isProcessing by remember { mutableStateOf(false) }
     var alreadyCaptured by remember { mutableStateOf(false) }
     var embeddingSamples by remember { mutableStateOf<List<List<Float>>>(emptyList()) }
+
+    var lastMessageTime by remember { mutableStateOf(0L) }
+    val MESSAGE_COOLDOWN = 1500L // 1.5 secondi
+
+    fun safeStatusUpdate(msg: String) {
+        val now = System.currentTimeMillis()
+        if (now - lastMessageTime > MESSAGE_COOLDOWN) {
+            lastMessageTime = now
+            onStatusChange(msg)
+        }
+    }
 
     val faceNetHelper = remember { FaceNetHelper(context) }
 
@@ -114,7 +126,7 @@ fun FaceCapturePreview(
                             .addOnSuccessListener { faces ->
 
                                 if (faces.isEmpty()) {
-                                    onStatusChange("Nessun volto rilevato")
+                                    safeStatusUpdate("Nessun volto rilevato")
                                     imageProxy.close()
                                     return@addOnSuccessListener
                                 }
@@ -145,13 +157,13 @@ fun FaceCapturePreview(
                                     isFullyInside
 
                                 if (!isValid) {
-                                    onStatusChange("Guarda dritto e avvicinati")
+                                    safeStatusUpdate("Guarda dritto e avvicinati")
                                     imageProxy.close()
                                     return@addOnSuccessListener
                                 }
 
                                 isProcessing = true
-                                onStatusChange("Acquisizione in corso...")
+                                safeStatusUpdate("Acquisizione in corso...")
 
                                 val bitmap = imageProxy.toBitmap()
                                 val faceBitmap = cropFace(bitmap, face.boundingBox)
@@ -170,7 +182,7 @@ fun FaceCapturePreview(
 
                                     // Raccolta campioni
                                     if (newSamples.size < 7) {
-                                        onStatusChange("Rimani fermo (${newSamples.size}/5)")
+                                        safeStatusUpdate("Rimani fermo (${newSamples.size}/5)")
                                         isProcessing = false
                                         imageProxy.close()
                                         return@addOnSuccessListener
@@ -180,12 +192,12 @@ fun FaceCapturePreview(
                                     val finalEmbedding = averageEmbeddings(newSamples)
 
                                     alreadyCaptured = true
-                                    onStatusChange("Volto acquisito correttamente")
+                                    safeStatusUpdate("Volto acquisito correttamente")
                                     onEmbeddingCaptured(finalEmbedding)
 
                                 } catch (e: Exception) {
                                     Log.e("FaceCapture", "Errore embedding", e)
-                                    onStatusChange("Errore analisi volto")
+                                    safeStatusUpdate("Errore analisi volto")
                                 } finally {
                                     isProcessing = false
                                     imageProxy.close()

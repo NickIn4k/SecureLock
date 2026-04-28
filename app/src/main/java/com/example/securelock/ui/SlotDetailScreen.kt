@@ -1,25 +1,34 @@
 package com.example.securelock.ui
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.securelock.R
 import com.example.securelock.network.ApiClient
 import com.example.securelock.network.SlotActionRequest
 import com.example.securelock.network.SlotDetailResponse
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,18 +40,17 @@ fun SlotDetailScreen(
     val scope = rememberCoroutineScope()
 
     var detail by remember { mutableStateOf<SlotDetailResponse?>(null) }
-    var message by remember { mutableStateOf("") }
-
     var isLoading by remember { mutableStateOf(true) }
     var isActionLoading by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(message) {
-        if (message.isNotBlank()) {
-            snackbarHostState.showSnackbar(message)
-            message = ""
-        }
+    // ── Funzione helper errore ────────────────────────────────────────────────
+    suspend fun showError(message: String) {
+        snackbarHostState.showSnackbar(
+            message = message,
+            duration = SnackbarDuration.Short
+        )
     }
 
     LaunchedEffect(userId, slotId) {
@@ -50,231 +58,287 @@ fun SlotDetailScreen(
         try {
             val response = ApiClient.api.getSlotDetail(userId, slotId)
             val body = response.body()
-
             if (response.isSuccessful && body?.success == true) {
                 detail = body
             } else {
-                message = body?.message ?: "Errore caricamento slot"
+                showError(body?.message ?: "Errore caricamento slot")
             }
-
         } catch (e: Exception) {
-            message = "Errore connessione: ${e.message}"
+            showError("Errore connessione: ${e.message}")
         } finally {
             isLoading = false
         }
     }
 
-    val cardShape = RoundedCornerShape(28.dp)
-    val buttonShape = RoundedCornerShape(18.dp)
-
     val isOpen = detail?.status.equals("open", ignoreCase = true)
-
-    // 🕒 FORMAT DATA
-    fun formatDate(raw: String?): String {
-        return try {
-            if (raw == null) return "-"
-            val parsed = LocalDateTime.parse(raw)
-            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
-            parsed.format(formatter)
-        } catch (e: Exception) {
-            raw ?: "-"
-        }
-    }
-
-    // 🎨 COMPONENTE RIGA CARINA
-    @Composable
-    fun InfoRow(label: String, value: String) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = Color(0xFF7A8A9A)
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF16324F)
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-        }
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // 🌈 GRADIENT CHIARO
+        // ── Sfondo immagine ───────────────────────────────────────────────────
+        Image(
+            painter = painterResource(id = R.drawable.bg_welcome),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Overlay semitrasparente per leggibilità
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0xFFEAF4FF),
-                            Color(0xFFF0ECFF),
-                            Color(0xFFF7F9FC)
-                        )
-                    )
-                )
+                .background(Color(0x55FFFFFF))
         )
 
         Scaffold(
             containerColor = Color.Transparent,
-
             snackbarHost = {
-                SnackbarHost(hostState = snackbarHostState) {
+                SnackbarHost(hostState = snackbarHostState) { data ->
                     Snackbar(
-                        snackbarData = it,
-                        containerColor = Color(0xFFD32F2F),
-                        contentColor = Color.White
+                        snackbarData = data,
+                        containerColor = Color(0xFFB00020),
+                        contentColor = Color.White,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
             },
-
             topBar = {
                 TopAppBar(
                     title = {},
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Indietro",
+                                tint = Color(0xFF16324F)
+                            )
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
                         scrolledContainerColor = Color.Transparent
                     )
                 )
             }
-
         ) { paddingValues ->
 
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
+                    .padding(horizontal = 28.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = cardShape,
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(
-                        1.dp,
-                        Brush.linearGradient(
-                            listOf(
-                                Color(0x55B7A6FF),
-                                Color(0x558FD3FF)
-                            )
-                        )
-                    ),
-                    elevation = CardDefaults.cardElevation(10.dp)
-                ) {
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color(0xFF16324F))
+                } else {
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp)
-                    ) {
+                    // ── Titolo sullo sfondo ───────────────────────────────────
+                    Text(
+                        text = "Cassetto $slotId",
+                        fontSize = 42.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF16324F),
+                        letterSpacing = (-1).sp
+                    )
 
-                        if (isLoading) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
-                            }
-                            return@Column
-                        }
+                    Spacer(Modifier.height(6.dp))
 
-                        // ✨ TITOLO CENTRATO + CORSIVO
-                        Text(
-                            text = "Cassetto #$slotId",
-                            modifier = Modifier.fillMaxWidth(),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            fontStyle = FontStyle.Italic,
-                            color = Color(0xFF16324F)
-                        )
+                    Text(
+                        text = detail?.vehicleName ?: "Nessun veicolo",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF4A5568)
+                    )
 
-                        Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(40.dp))
 
-                        // 📊 DATI FORMATTATI
-                        InfoRow("Stato", detail?.status ?: "-")
-                        InfoRow(
-                            "Chiave",
-                            if (detail?.hasKey == true) "Presente" else "Assente"
-                        )
-                        InfoRow("Veicolo", detail?.vehicleName ?: "Nessuno")
-                        InfoRow(
-                            "Ultimo aggiornamento",
-                            detail?.lastUpdated
-                                ?.replace("T", " ")
-                                ?.substring(0, 16)
-                                ?: "-"
-                        )
-
-                        Spacer(Modifier.height(20.dp))
-
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    isActionLoading = true
-                                    try {
-                                        val action = if (isOpen) "close" else "open"
-
-                                        val response = ApiClient.api.slotAction(
-                                            SlotActionRequest(
-                                                userId = userId,
-                                                slotId = slotId,
-                                                action = action
-                                            )
-                                        )
-
-                                        val body = response.body()
-
-                                        message =
-                                            if (response.isSuccessful && body?.success == true) {
-                                                body.message
-                                            } else {
-                                                body?.message ?: "Errore comando slot"
-                                            }
-
-                                    } catch (e: Exception) {
-                                        message = "Errore connessione: ${e.message}"
-                                    } finally {
-                                        isActionLoading = false
-                                    }
-                                }
-                            },
-                            enabled = !isActionLoading,
+                    // ── Card glass con le info ────────────────────────────────
+                    GlassInfoCard {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp),
-                            shape = buttonShape,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF7EA8FF),
-                                contentColor = Color.White
+                                .padding(24.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+
+                            GlassInfoRow(
+                                icon = if (isOpen) Icons.Default.Lock else Icons.Default.Lock,
+                                label = "Stato",
+                                value = if (isOpen) "Aperto" else "Chiuso",
+                                valueColor = if (isOpen) Color(0xFF027A48) else Color(0xFF4A5568)
                             )
-                        ) {
-                            if (isActionLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(22.dp),
-                                    color = Color.White
-                                )
-                            } else {
-                                Text(
-                                    if (isOpen) "Chiudi cassetto" else "Apri cassetto",
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
+
+                            HorizontalDivider(color = Color(0x22000000))
+
+                            GlassInfoRow(
+                                icon = Icons.Default.Key,
+                                label = "Chiave",
+                                value = if (detail?.hasKey == true) "Presente" else "Assente",
+                                valueColor = if (detail?.hasKey == true)
+                                    Color(0xFF027A48) else Color(0xFFB00020)
+                            )
+
+                            HorizontalDivider(color = Color(0x22000000))
+
+                            GlassInfoRow(
+                                icon = Icons.Default.DirectionsCar,
+                                label = "Tipo",
+                                value = detail?.vehicleName ?: "Nessuno",
+                                valueColor = Color(0xFF16324F)
+                            )
+
+                            HorizontalDivider(color = Color(0x22000000))
+
+                            GlassInfoRow(
+                                icon = Icons.Default.Schedule,
+                                label = "Ultimo aggiornamento",
+                                value = detail?.lastUpdated
+                                    ?.replace("T", " ")
+                                    ?.substring(0, 16)
+                                    ?: "-",
+                                valueColor = Color(0xFF4A5568)
+                            )
                         }
+                    }
 
-                        Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(24.dp))
 
-                        TextButton(
-                            onClick = { navController.popBackStack() }
-                        ) {
-                            Text("Indietro")
+                    // ── Pulsante azione ───────────────────────────────────────
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                isActionLoading = true
+                                try {
+                                    val action = if (isOpen) "close" else "open"
+                                    val response = ApiClient.api.slotAction(
+                                        SlotActionRequest(
+                                            userId = userId,
+                                            slotId = slotId,
+                                            action = action
+                                        )
+                                    )
+                                    val body = response.body()
+                                    if (response.isSuccessful && body?.success == true) {
+                                        snackbarHostState.showSnackbar(
+                                            message = body.message,
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    } else {
+                                        showError(body?.message ?: "Errore comando slot")
+                                    }
+                                } catch (e: Exception) {
+                                    showError("Errore connessione: ${e.message}")
+                                } finally {
+                                    isActionLoading = false
+                                }
+                            }
+                        },
+                        enabled = !isActionLoading,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(58.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF16324F),
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0x8816324F)
+                        )
+                    ) {
+                        if (isActionLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = if (isOpen) "Chiudi cassetto" else "Apri cassetto",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp
+                            )
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+// ── Card glass riutilizzabile ─────────────────────────────────────────────────
+@Composable
+fun GlassInfoCard(content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+    ) {
+        // Layer vetro
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(Color(0x66FFFFFF))
+        )
+        // Layer gradiente
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0x55FFFFFF),
+                            Color(0x11FFFFFF)
+                        )
+                    )
+                )
+        )
+        content()
+    }
+}
+
+// ── Riga info con icona ───────────────────────────────────────────────────────
+@Composable
+fun GlassInfoRow(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    valueColor: Color
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // Icona con sfondo colorato
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0x1516324F)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color(0xFF16324F),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Column {
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                color = Color(0xFF7A8A9A),
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = value,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = valueColor
+            )
         }
     }
 }

@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.securelock.network.ApiClient
+import com.example.securelock.network.DeleteUserRequest
 import com.example.securelock.ui.admin.components.AdminActionSelector
 import com.example.securelock.ui.admin.components.CreateUserSection
 import com.example.securelock.ui.admin.components.DeleteUserSection
@@ -29,6 +31,8 @@ fun AdminNewUserScreen(
     val cardShape = RoundedCornerShape(28.dp)
 
     val snackbarHostState = remember { SnackbarHostState() }
+    var refreshUsers by remember { mutableStateOf(0) }
+    var lastDeletedUserId by remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -138,6 +142,7 @@ fun AdminNewUserScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         when (selectedAction) {
+
                             AdminAction.CREATE -> {
                                 CreateUserSection(
                                     currentUserId = userId,
@@ -154,8 +159,35 @@ fun AdminNewUserScreen(
 
                             AdminAction.DELETE -> {
                                 DeleteUserSection(
+                                    currentUserId = userId,
+                                    refreshTrigger = refreshUsers,
+                                    deletedUserId = lastDeletedUserId,
                                     onDeleteClick = { user ->
-                                        // TODO: collega API delete user
+                                        scope.launch {
+                                            try {
+                                                lastDeletedUserId = user.id
+
+                                                val response = ApiClient.api.deleteUser(
+                                                    DeleteUserRequest(userId, user.id)
+                                                )
+
+                                                val body = response.body()
+
+                                                if (response.isSuccessful && body?.success == true) {
+                                                    snackbarHostState.showSnackbar("Utente eliminato")
+                                                    refreshUsers++
+                                                } else {
+                                                    snackbarHostState.showSnackbar(
+                                                        body?.message ?: "Errore eliminazione"
+                                                    )
+
+                                                    lastDeletedUserId = null
+                                                }
+
+                                            } catch (e: Exception) {
+                                                snackbarHostState.showSnackbar("Errore: ${e.message}")
+                                            }
+                                        }
                                     }
                                 )
                             }

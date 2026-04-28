@@ -53,6 +53,21 @@ interface ApiService {
     suspend fun slotAction(
         @Body request: SlotActionRequest
     ): Response<GenericResponse>
+
+    @GET("api/admin/building/slots")
+    suspend fun getAdminBuildingSlots(
+        @Query("adminUserId") adminUserId: Int
+    ): Response<AdminBuildingSlotsResponse>
+
+    @GET("api/admin/building/users")
+    suspend fun getAdminBuildingUsers(
+        @Query("adminUserId") adminUserId: Int
+    ): Response<AdminBuildingUsersResponse>
+
+    @POST("api/admin/user/delete")
+    suspend fun deleteUser(
+        @Body request: DeleteUserRequest
+    ): Response<GenericResponse>
 }
 
 data class FaceAuthRequest(
@@ -154,4 +169,37 @@ data class GenericResponse(
     val userId: Int? = null,
     val userName: String? = null,
     val userRole: String? = null
+)
+
+data class AdminBuildingSlotsResponse(
+    val success: Boolean,
+    val message: String,
+    val buildingId: Int? = null,
+    val slots: List<AdminSlotItem> = emptyList()
+)
+
+data class AdminSlotItem(
+    val id: Int,
+    val status: String,
+    val hasKey: Boolean,
+    val vehicleName: String? = null,
+    val vehicleType: String? = null
+)
+
+data class AdminBuildingUsersResponse(
+    val success: Boolean,
+    val message: String,
+    val buildingId: Int? = null,
+    val users: List<BuildingUserItem> = emptyList()
+)
+
+data class BuildingUserItem(
+    val id: Int,
+    val username: String,
+    val name: String? = null
+)
+
+data class DeleteUserRequest(
+    val adminUserId: Int,
+    val userId: Int
 )

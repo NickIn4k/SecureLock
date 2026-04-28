@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.securelock.network.AdminSlotItem
 import com.example.securelock.network.ApiClient
 import com.example.securelock.network.CreateUserRequest
 import com.example.securelock.network.FaceCheckRequest
@@ -37,10 +38,30 @@ fun CreateUserSection(
 
     var isLoading by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
+    var availableSlots by remember { mutableStateOf<List<AdminSlotItem>>(emptyList()) }
+    var isSlotsLoading by remember { mutableStateOf(true) }
 
     val scope = rememberCoroutineScope()
 
     val shape = RoundedCornerShape(18.dp)
+
+    LaunchedEffect(currentUserId) {
+        isSlotsLoading = true
+        try {
+            val response = ApiClient.api.getAdminBuildingSlots(currentUserId)
+            val body = response.body()
+
+            if (response.isSuccessful && body?.success == true) {
+                availableSlots = body.slots
+            } else {
+                onMessage(body?.message ?: "Errore caricamento slot")
+            }
+        } catch (e: Exception) {
+            onMessage("Errore caricamento slot: ${e.message}")
+        } finally {
+            isSlotsLoading = false
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -203,31 +224,29 @@ fun CreateUserSection(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                val slots = listOf(
-                    1 to "Cassetto 1",
-                    2 to "Cassetto 2",
-                    3 to "Cassetto 3"
-                )
+                if (isSlotsLoading) {
+                    CircularProgressIndicator()
+                } else {
+                    availableSlots.forEach { slot ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Slot ${slot.id} - ${slot.vehicleName ?: "nessun veicolo"}")
 
-                slots.forEach { (id, name) ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(name)
-
-                        Checkbox(
-                            checked = selectedSlots.contains(id),
-                            onCheckedChange = { checked ->
-                                selectedSlots = if (checked)
-                                    selectedSlots + id
-                                else
-                                    selectedSlots - id
-                            }
-                        )
+                            Checkbox(
+                                checked = selectedSlots.contains(slot.id),
+                                onCheckedChange = { checked ->
+                                    selectedSlots = if (checked)
+                                        selectedSlots + slot.id
+                                    else
+                                        selectedSlots - slot.id
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -343,3 +362,5 @@ fun CreateUserSection(
         }
     }
 }
+
+

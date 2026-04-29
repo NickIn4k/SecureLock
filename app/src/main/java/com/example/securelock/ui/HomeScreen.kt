@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -20,12 +22,16 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.securelock.R
 import com.example.securelock.ui.components.SecureLockMenu
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
     val cardShape = RoundedCornerShape(28.dp)
     val buttonShape = RoundedCornerShape(18.dp)
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -53,6 +59,17 @@ fun HomeScreen(navController: NavController) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState) { data ->
+                    Snackbar(
+                        snackbarData = data,
+                        containerColor = Color(0xFFD32F2F),
+                        contentColor = Color.White,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            },
             topBar = {
                 TopAppBar(
                     title = {},
@@ -65,7 +82,7 @@ fun HomeScreen(navController: NavController) {
                             modifier = Modifier
                                 .padding(end = 12.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0x44FFFFFF))
+                                .background(Color(0x33FFFFFF))
                         ) {
                             SecureLockMenu(
                                 navController = navController,
@@ -137,7 +154,15 @@ fun HomeScreen(navController: NavController) {
                         Spacer(modifier = Modifier.height(28.dp))
 
                         Button(
-                            onClick = { navController.navigate(Routes.FACE_AUTH) },
+                            onClick = {
+                                runCatching {
+                                    navController.navigate(Routes.FACE_AUTH)
+                                }.onFailure {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Errore apertura schermata")
+                                    }
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
@@ -160,7 +185,15 @@ fun HomeScreen(navController: NavController) {
                         Spacer(modifier = Modifier.height(14.dp))
 
                         OutlinedButton(
-                            onClick = { navController.navigate(Routes.LOGIN) },
+                            onClick = {
+                                runCatching {
+                                    navController.navigate(Routes.LOGIN)
+                                }.onFailure {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Errore apertura login")
+                                    }
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(54.dp),

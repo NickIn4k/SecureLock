@@ -235,7 +235,7 @@ fun CreateUserSection(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Slot ${slot.id} - ${slot.vehicleName ?: "nessun veicolo"}")
+                            Text("Slot ${slot.id}")
 
                             Checkbox(
                                 checked = selectedSlots.contains(slot.id),

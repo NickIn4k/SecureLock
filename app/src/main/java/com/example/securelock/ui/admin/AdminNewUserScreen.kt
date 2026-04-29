@@ -1,6 +1,6 @@
 package com.example.securelock.ui.admin
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,8 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.securelock.R
 import com.example.securelock.network.ApiClient
 import com.example.securelock.network.DeleteUserRequest
 import com.example.securelock.ui.admin.components.AdminActionSelector
@@ -20,6 +23,10 @@ import com.example.securelock.ui.admin.components.CreateUserSection
 import com.example.securelock.ui.admin.components.DeleteUserSection
 import com.example.securelock.ui.components.SecureLockMenu
 import kotlinx.coroutines.launch
+
+// Enum per distinguere se il messaggio è un errore o un successo
+private enum class SnackbarType { SUCCESS, ERROR }
+private data class SnackbarData(val message: String, val type: SnackbarType)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,34 +38,46 @@ fun AdminNewUserScreen(
     val cardShape = RoundedCornerShape(28.dp)
 
     val snackbarHostState = remember { SnackbarHostState() }
+    var currentSnackbar by remember { mutableStateOf<SnackbarData?>(null) }
     var refreshUsers by remember { mutableStateOf(0) }
     var lastDeletedUserId by remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
 
+    // Helper per mostrare snackbar con tipo
+    suspend fun showSnackbar(message: String, type: SnackbarType) {
+        currentSnackbar = SnackbarData(message, type)
+        snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
 
+        // ── Sfondo immagine ───────────────────────────────────────────────────
+        Image(
+            painter = painterResource(id = R.drawable.shadows_bg),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Overlay semitrasparente
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0xFFEAF4FF),
-                            Color(0xFFEDE7FF),
-                            Color(0xFFF7F9FC)
-                        )
-                    )
-                )
+                .background(Color(0x55FFFFFF))
         )
 
         Scaffold(
             containerColor = Color.Transparent,
             snackbarHost = {
                 SnackbarHost(hostState = snackbarHostState) { data ->
+                    // Colore diverso in base al tipo di messaggio
+                    val isError = currentSnackbar?.type == SnackbarType.ERROR
                     Snackbar(
                         snackbarData = data,
-                        containerColor = Color.Red,
-                        contentColor = Color.White
+                        containerColor = if (isError) Color(0xFFB00020) else Color(0xFF1B5E20),
+                        contentColor = Color.White,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
             },
@@ -74,7 +93,7 @@ fun AdminNewUserScreen(
                             modifier = Modifier
                                 .padding(end = 12.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0x44FFFFFF))
+                                .background(Color(0x33FFFFFF))
                         ) {
                             SecureLockMenu(
                                 navController = navController,
@@ -89,57 +108,70 @@ fun AdminNewUserScreen(
                 )
             }
         ) { paddingValues ->
-            Box(
+
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
+                    .padding(horizontal = 28.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = cardShape,
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    border = BorderStroke(
-                        1.dp,
-                        Brush.linearGradient(
-                            listOf(
-                                Color(0x55B7A6FF),
-                                Color(0x558FD3FF)
-                            )
-                        )
-                    ),
-                    elevation = CardDefaults.cardElevation(10.dp)
+
+                // ── Titolo sullo sfondo ───────────────────────────────────────
+                Text(
+                    text = "Gestione utenti",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color(0xFF16324F)
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                Text(
+                    text = "Scegli un'azione dal menu qui sotto.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF4A5568)
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                // ── Card glassmorphism ────────────────────────────────────────
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(cardShape)
                 ) {
+                    // Layer vetro
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(Color(0x66FFFFFF))
+                    )
+                    // Layer gradiente
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        Color(0x55FFFFFF),
+                                        Color(0x11FFFFFF)
+                                    )
+                                )
+                            )
+                    )
+
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp)
+                            .padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp) // ← spazio ridotto
                     ) {
-                        Text(
-                            text = "Gestione utenti",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = Color(0xFF16324F)
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = "Scegli un'azione dal menu qui sotto.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF5E6B7A)
-                        )
-
-                        Spacer(modifier = Modifier.height(20.dp))
 
                         AdminActionSelector(
                             selectedAction = selectedAction,
                             onActionSelected = { selectedAction = it }
                         )
-
-                        Spacer(modifier = Modifier.height(12.dp))
 
                         when (selectedAction) {
 
@@ -151,7 +183,8 @@ fun AdminNewUserScreen(
                                     },
                                     onMessage = { msg ->
                                         scope.launch {
-                                            snackbarHostState.showSnackbar(msg)
+                                            // I messaggi di creazione sono successi
+                                            showSnackbar(msg, SnackbarType.SUCCESS)
                                         }
                                     }
                                 )
@@ -166,26 +199,22 @@ fun AdminNewUserScreen(
                                         scope.launch {
                                             try {
                                                 lastDeletedUserId = user.id
-
                                                 val response = ApiClient.api.deleteUser(
                                                     DeleteUserRequest(userId, user.id)
                                                 )
-
                                                 val body = response.body()
-
                                                 if (response.isSuccessful && body?.success == true) {
-                                                    snackbarHostState.showSnackbar("Utente eliminato")
+                                                    showSnackbar("Utente eliminato", SnackbarType.SUCCESS)
                                                     refreshUsers++
                                                 } else {
-                                                    snackbarHostState.showSnackbar(
-                                                        body?.message ?: "Errore eliminazione"
+                                                    showSnackbar(
+                                                        body?.message ?: "Errore eliminazione",
+                                                        SnackbarType.ERROR
                                                     )
-
                                                     lastDeletedUserId = null
                                                 }
-
                                             } catch (e: Exception) {
-                                                snackbarHostState.showSnackbar("Errore: ${e.message}")
+                                                showSnackbar("Errore: ${e.message}", SnackbarType.ERROR)
                                             }
                                         }
                                     }

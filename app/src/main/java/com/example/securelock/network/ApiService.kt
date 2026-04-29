@@ -68,6 +68,21 @@ interface ApiService {
     suspend fun deleteUser(
         @Body request: DeleteUserRequest
     ): Response<GenericResponse>
+
+    @POST("api/admin/newAdmin")
+    suspend fun createAdminUser(
+        @Body request: CreateAdminRequest
+    ): Response<GenericResponse>
+
+    @POST("api/admin/newBuilding")
+    suspend fun createBuilding(
+        @Body request: CreateBuildingRequest
+    ): Response<GenericResponse>
+
+    @POST("api/admin/newSlots")
+    suspend fun createAdminSlots(
+        @Body request: CreateSlotsRequest
+    ): Response<GenericResponse>
 }
 
 data class FaceAuthRequest(
@@ -168,7 +183,8 @@ data class GenericResponse(
     val message: String,
     val userId: Int? = null,
     val userName: String? = null,
-    val userRole: String? = null
+    val userRole: String? = null,
+    val buildingId: Int? = null
 )
 
 data class AdminBuildingSlotsResponse(
@@ -202,4 +218,20 @@ data class BuildingUserItem(
 data class DeleteUserRequest(
     val adminUserId: Int,
     val userId: Int
+)
+
+data class CreateAdminRequest(
+    val fullName: String,
+    val username: String,
+    val password: String
+)
+
+data class CreateBuildingRequest(
+    val name: String,
+    val address: String?
+)
+
+data class CreateSlotsRequest(
+    val buildingId: Int,
+    val numberOfSlots: Int
 )

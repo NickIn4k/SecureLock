@@ -1,33 +1,46 @@
 package com.example.securelock.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.securelock.storage.SetupPrefs
 import com.example.securelock.ui.admin.AdminNewUserScreen
 
-// Routes
 object Routes {
     const val HOME = "home"
     const val FACE_AUTH = "face_auth"
     const val LOGIN = "login"
     const val CREDITS = "credits"
-    const val WELCOME = "welcome/{userId}/{isAdmin}"
-    const val SLOT_DETAIL = "slot_detail/{userId}/{slotId}"
+    const val SETUP = "setup"
 }
 
 @Composable
 fun AppNavigation() {
-    // Controller di navigazione
     val navController = rememberNavController()
+    val context = LocalContext.current
 
-    // NavHost: contenitore della schermata corrente
-    // startDestination: prima schermata
+    val startDestination = if (SetupPrefs.isSetupCompleted(context)) {
+        Routes.HOME
+    } else {
+        Routes.SETUP
+    }
+
     NavHost(
         navController = navController,
-        startDestination = Routes.HOME
+        startDestination = startDestination
     ) {
-        // Ogni composable() => una schermata
+        composable(Routes.SETUP) {
+            SetupScreen(
+                onSetupCompleted = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.SETUP) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Routes.HOME) {
             HomeScreen(navController = navController)
         }
@@ -41,7 +54,6 @@ fun AppNavigation() {
         }
 
         composable("admin_new_user/{adminId}") { backStackEntry ->
-
             val adminId = backStackEntry.arguments
                 ?.getString("adminId")
                 ?.toIntOrNull() ?: -1

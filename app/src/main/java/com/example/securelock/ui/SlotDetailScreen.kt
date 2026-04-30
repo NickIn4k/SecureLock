@@ -28,6 +28,7 @@ import com.example.securelock.R
 import com.example.securelock.network.ApiClient
 import com.example.securelock.network.SlotActionRequest
 import com.example.securelock.network.SlotDetailResponse
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,7 +47,6 @@ fun SlotDetailScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // ── Funzione helper errore ────────────────────────────────────────────────
     suspend fun showError(message: String) {
         snackbarHostState.showSnackbar(
             message = message,
@@ -54,28 +54,34 @@ fun SlotDetailScreen(
         )
     }
 
-    LaunchedEffect(userId, deviceId, slotId) {
-        isLoading = true
-        try {
-            val response = ApiClient.api.getSlotDetail(userId, deviceId, slotId)
-            val body = response.body()
-            if (response.isSuccessful && body?.success == true) {
-                detail = body
-            } else {
-                showError(body?.message ?: "Errore caricamento slot")
+    fun refreshDetail() {
+        scope.launch {
+            isLoading = true
+            try {
+                val response = ApiClient.api.getSlotDetail(userId, deviceId, slotId)
+                val body = response.body()
+
+                if (response.isSuccessful && body?.success == true) {
+                    detail = body
+                } else {
+                    showError(body?.message ?: "Errore caricamento slot")
+                }
+            } catch (e: Exception) {
+                showError("Errore connessione: ${e.message}")
+            } finally {
+                isLoading = false
             }
-        } catch (e: Exception) {
-            showError("Errore connessione: ${e.message}")
-        } finally {
-            isLoading = false
         }
+    }
+
+    LaunchedEffect(userId, deviceId, slotId) {
+        refreshDetail()
     }
 
     val isOpen = detail?.status.equals("open", ignoreCase = true)
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // ── Sfondo immagine ───────────────────────────────────────────────────
         Image(
             painter = painterResource(id = R.drawable.bg_welcome),
             contentDescription = null,
@@ -83,7 +89,6 @@ fun SlotDetailScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Overlay semitrasparente per leggibilità
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -122,7 +127,6 @@ fun SlotDetailScreen(
                 )
             }
         ) { paddingValues ->
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -131,12 +135,9 @@ fun SlotDetailScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
                 if (isLoading) {
                     CircularProgressIndicator(color = Color(0xFF16324F))
                 } else {
-
-                    // ── Titolo sullo sfondo ───────────────────────────────────
                     Text(
                         text = "Cassetto $slotId",
                         fontSize = 42.sp,
@@ -156,7 +157,6 @@ fun SlotDetailScreen(
 
                     Spacer(Modifier.height(40.dp))
 
-                    // ── Card glass con le info ────────────────────────────────
                     GlassInfoCard {
                         Column(
                             modifier = Modifier
@@ -164,9 +164,8 @@ fun SlotDetailScreen(
                                 .padding(24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-
                             GlassInfoRow(
-                                icon = if (isOpen) Icons.Default.Lock else Icons.Default.Lock,
+                                icon = Icons.Default.Lock,
                                 label = "Stato",
                                 value = if (isOpen) "Aperto" else "Chiuso",
                                 valueColor = if (isOpen) Color(0xFF027A48) else Color(0xFF4A5568)
@@ -186,7 +185,7 @@ fun SlotDetailScreen(
 
                             GlassInfoRow(
                                 icon = Icons.Default.DirectionsCar,
-                                label = "Tipo",
+                                label = "Veicolo",
                                 value = detail?.vehicleName ?: "Nessuno",
                                 valueColor = Color(0xFF16324F)
                             )
@@ -207,20 +206,36 @@ fun SlotDetailScreen(
 
                     Spacer(Modifier.height(24.dp))
 
-                    // ── Pulsante azione ───────────────────────────────────────
                     Button(
                         onClick = {
                             scope.launch {
                                 isActionLoading = true
                                 try {
                                     val action = if (isOpen) "close" else "open"
-                                    val response = ApiClient.api.getSlotDetail(userId, deviceId, slotId)
+
+                                    val response = ApiClient.api.slotAction(
+                                        SlotActionRequest(
+                                            userId = userId,
+                                            deviceId = deviceId,
+                                            slotId = slotId,
+                                            action = action
+                                        )
+                                    )
+
                                     val body = response.body()
+
                                     if (response.isSuccessful && body?.success == true) {
                                         snackbarHostState.showSnackbar(
                                             message = body.message,
                                             duration = SnackbarDuration.Short
                                         )
+
+                                        // Attendo che Node-RED faccia MQTT + eventuale auto-close
+                                        // Se open, dopo 7 secondi il device chiude da solo
+                                        // quindi aspetto un po' e poi rileggo lo stato
+                                        delay(if (action == "open") 8500L else 1500L)
+
+                                        refreshDetail()
                                     } else {
                                         showError(body?.message ?: "Errore comando slot")
                                     }
@@ -262,7 +277,6 @@ fun SlotDetailScreen(
     }
 }
 
-// ── Card glass riutilizzabile ─────────────────────────────────────────────────
 @Composable
 fun GlassInfoCard(content: @Composable () -> Unit) {
     Box(
@@ -270,13 +284,12 @@ fun GlassInfoCard(content: @Composable () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(28.dp))
     ) {
-        // Layer vetro
         Box(
             modifier = Modifier
                 .matchParentSize()
                 .background(Color(0x66FFFFFF))
         )
-        // Layer gradiente
+
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -289,11 +302,11 @@ fun GlassInfoCard(content: @Composable () -> Unit) {
                     )
                 )
         )
+
         content()
     }
 }
 
-// ── Riga info con icona ───────────────────────────────────────────────────────
 @Composable
 fun GlassInfoRow(
     icon: ImageVector,
@@ -305,7 +318,6 @@ fun GlassInfoRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // Icona con sfondo colorato
         Box(
             modifier = Modifier
                 .size(40.dp)

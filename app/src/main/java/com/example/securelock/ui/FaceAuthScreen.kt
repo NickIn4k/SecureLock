@@ -16,16 +16,31 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun FaceAuthScreen(navController: NavController) {
+
     val scope = rememberCoroutineScope()
 
-    var statusMessage by remember { mutableStateOf("Posiziona il viso davanti alla fotocamera") }
+    var statusMessage by remember {
+        mutableStateOf("Posiziona il viso davanti alla fotocamera")
+    }
+
+    // 🔴 evita chiamate multiple (fondamentale)
+    var alreadySent by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize()) {
 
         FaceCapturePreview(
             modifier = Modifier.fillMaxSize(),
-            onStatusChange = { statusMessage = it },
+
+            onStatusChange = {
+                statusMessage = it
+            },
+
             onEmbeddingCaptured = { embedding ->
+
+                // evita doppie chiamate
+                if (alreadySent) return@FaceCapturePreview
+                alreadySent = true
+
                 statusMessage = "Invio embedding al server..."
 
                 scope.launch {
@@ -36,18 +51,36 @@ fun FaceAuthScreen(navController: NavController) {
                             statusMessage = "Login riuscito"
 
                             val userId = body.userId ?: 0
-                            val isAdmin = body.isAdmin ?: (body.userRole == "admin")
+                            val role = body.userRole
 
-                            navController.navigate("welcome/$userId/$isAdmin") {
-                                popUpTo(Routes.FACE_AUTH) { inclusive = true }
+                            when (role) {
+                                "superadmin" -> {
+                                    navController.navigate("setup/$userId") {
+                                        popUpTo(Routes.FACE_AUTH) { inclusive = true }
+                                    }
+                                }
+
+                                "admin" -> {
+                                    navController.navigate("welcome/$userId/true") {
+                                        popUpTo(Routes.FACE_AUTH) { inclusive = true }
+                                    }
+                                }
+
+                                else -> {
+                                    navController.navigate("welcome/$userId/false") {
+                                        popUpTo(Routes.FACE_AUTH) { inclusive = true }
+                                    }
+                                }
                             }
                         },
 
                         onFailure = {
+                            alreadySent = false
                             statusMessage = "Volto non riconosciuto"
                         },
 
                         onError = {
+                            alreadySent = false
                             statusMessage = "Errore connessione"
                         }
                     )
@@ -55,6 +88,7 @@ fun FaceAuthScreen(navController: NavController) {
             }
         )
 
+        // 🔵 UI messaggi sotto
         Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -69,7 +103,11 @@ fun FaceAuthScreen(navController: NavController) {
 
                 Spacer(Modifier.height(8.dp))
 
-                TextButton(onClick = { navController.popBackStack() }) {
+                TextButton(
+                    onClick = {
+                        navController.popBackStack()
+                    }
+                ) {
                     Text("Annulla")
                 }
             }

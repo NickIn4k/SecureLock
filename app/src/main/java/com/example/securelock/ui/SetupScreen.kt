@@ -1,48 +1,44 @@
 package com.example.securelock.ui
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import com.example.securelock.network.ApiClient
-import com.example.securelock.network.CreateAdminRequest
-import com.example.securelock.network.CreateBuildingRequest
-import com.example.securelock.network.CreateSlotsRequest
+import com.example.securelock.network.SetupInstallRequest
 import com.example.securelock.storage.SetupPrefs
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
-
-enum class SetupStep {
-    ADMIN,
-    BUILDING,
-    SLOTS
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SetupScreen(
+    superAdminId: Int,
     onSetupCompleted: () -> Unit
 ) {
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var step by remember { mutableStateOf(SetupStep.ADMIN) }
+    var buildingName by remember { mutableStateOf("") }
+    var buildingAddress by remember { mutableStateOf("") }
+
+    var lat by remember { mutableStateOf<Double?>(null) }
+    var lng by remember { mutableStateOf<Double?>(null) }
 
     var adminFullName by remember { mutableStateOf("") }
     var adminUsername by remember { mutableStateOf("") }
     var adminPassword by remember { mutableStateOf("") }
 
-    var buildingName by remember { mutableStateOf("") }
-    var buildingAddress by remember { mutableStateOf("") }
-
-    var slotsCount by remember { mutableStateOf("") }
-
+    val slotsCount = 3
     var isLoading by remember { mutableStateOf(false) }
-    var adminId by remember { mutableStateOf<Int?>(null) }
-    var buildingId by remember { mutableStateOf<Int?>(null) }
 
     fun showMessage(msg: String) {
         scope.launch {
@@ -50,223 +46,161 @@ fun SetupScreen(
         }
     }
 
+    @SuppressLint("MissingPermission")
+    fun fetchLocation() {
+        val fusedLocationClient =
+            LocationServices.getFusedLocationProviderClient(context)
+
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            showMessage("Permesso posizione non concesso")
+            return
+        }
+
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location ->
+                if (location != null) {
+                    lat = location.latitude
+                    lng = location.longitude
+                } else {
+                    showMessage("Impossibile ottenere posizione")
+                }
+            }
+    }
+
+    // 🔥 auto GPS al primo render
+    LaunchedEffect(Unit) {
+        fetchLocation()
+    }
+
     Scaffold(
         snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
-                Snackbar(
-                    snackbarData = data,
-                    containerColor = Color(0xFFD32F2F),
-                    contentColor = Color.White,
-                    shape = MaterialTheme.shapes.medium
-                )
-            }
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+
             Text(
-                text = "Configurazione iniziale",
+                text = "Setup iniziale",
                 style = MaterialTheme.typography.headlineMedium
             )
 
-            when (step) {
-                SetupStep.ADMIN -> {
-                    Text("Crea l'account admin")
+            OutlinedTextField(
+                value = buildingName,
+                onValueChange = { buildingName = it },
+                label = { Text("Nome edificio") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                    OutlinedTextField(
-                        value = adminFullName,
-                        onValueChange = { adminFullName = it },
-                        label = { Text("Nome e cognome") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+            OutlinedTextField(
+                value = buildingAddress,
+                onValueChange = { buildingAddress = it },
+                label = { Text("Indirizzo edificio") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                    OutlinedTextField(
-                        value = adminUsername,
-                        onValueChange = { adminUsername = it },
-                        label = { Text("Username") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+            Text(
+                text = "Lat: ${lat ?: "caricamento..."}"
+            )
 
-                    OutlinedTextField(
-                        value = adminPassword,
-                        onValueChange = { adminPassword = it },
-                        label = { Text("Password") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+            Text(
+                text = "Lng: ${lng ?: "caricamento..."}"
+            )
 
-                    Button(
-                        onClick = {
-                            if (adminFullName.isBlank() || adminUsername.isBlank() || adminPassword.isBlank()) {
-                                showMessage("Compila tutti i campi admin")
-                                return@Button
-                            }
+            Text("Numero slot: 3")
 
-                            scope.launch {
-                                isLoading = true
-                                try {
-                                    val response = ApiClient.api.createAdminUser(
-                                        CreateAdminRequest(
-                                            fullName = adminFullName,
-                                            username = adminUsername,
-                                            password = adminPassword
-                                        )
-                                    )
+            OutlinedTextField(
+                value = adminFullName,
+                onValueChange = { adminFullName = it },
+                label = { Text("Nome admin") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                                    val body = response.body()
-                                    if (response.isSuccessful && body?.success == true) {
-                                        val createdAdminId = body.userId
-                                        if (createdAdminId == null) {
-                                            showMessage("Admin creato ma ID mancante")
-                                            return@launch
-                                        }
+            OutlinedTextField(
+                value = adminUsername,
+                onValueChange = { adminUsername = it },
+                label = { Text("Username admin") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                                        adminId = createdAdminId
-                                        SetupPrefs.saveAdminId(context, createdAdminId)
-                                        step = SetupStep.BUILDING
-                                        showMessage("Admin creato correttamente")
-                                    } else {
-                                        showMessage(body?.message ?: "Errore creazione admin")
-                                    }
-                                } catch (e: Exception) {
-                                    showMessage("Errore creazione admin: ${e.message}")
-                                } finally {
-                                    isLoading = false
-                                }
-                            }
-                        },
-                        enabled = !isLoading
+            OutlinedTextField(
+                value = adminPassword,
+                onValueChange = { adminPassword = it },
+                label = { Text("Password admin") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = {
+
+                    if (
+                        buildingName.isBlank() ||
+                        buildingAddress.isBlank() ||
+                        adminFullName.isBlank() ||
+                        adminUsername.isBlank() ||
+                        adminPassword.isBlank()
                     ) {
-                        Text("Crea admin")
+                        showMessage("Compila tutti i campi")
+                        return@Button
                     }
-                }
 
-                SetupStep.BUILDING -> {
-                    Text("Crea la casa")
+                    scope.launch {
+                        isLoading = true
+                        try {
 
-                    OutlinedTextField(
-                        value = buildingName,
-                        onValueChange = { buildingName = it },
-                        label = { Text("Nome casa") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+                            val response = ApiClient.api.setupInstall(
+                                SetupInstallRequest(
+                                    superAdminId = superAdminId,
+                                    buildingName = buildingName,
+                                    buildingAddress = buildingAddress,
+                                    lat = lat ?: 45.4642, // fallback Milano
+                                    lng = lng ?: 9.1900,
+                                    adminFullName = adminFullName,
+                                    adminUsername = adminUsername,
+                                    adminPassword = adminPassword,
+                                    numberOfSlots = slotsCount
+                                )
+                            )
 
-                    OutlinedTextField(
-                        value = buildingAddress,
-                        onValueChange = { buildingAddress = it },
-                        label = { Text("Indirizzo (opzionale)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+                            val body = response.body()
 
-                    Button(
-                        onClick = {
-                            if (buildingName.isBlank()) {
-                                showMessage("Inserisci il nome della casa")
-                                return@Button
-                            }
+                            if (response.isSuccessful && body?.success == true) {
 
-                            scope.launch {
-                                isLoading = true
-                                try {
-                                    val response = ApiClient.api.createBuilding(
-                                        CreateBuildingRequest(
-                                            name = buildingName,
-                                            address = buildingAddress.ifBlank { null }
-                                        )
-                                    )
-
-                                    val body = response.body()
-                                    if (response.isSuccessful && body?.success == true) {
-                                        val createdBuildingId = body.buildingId ?: body.userId
-                                        if (createdBuildingId == null) {
-                                            showMessage("Casa creata ma ID mancante")
-                                            return@launch
-                                        }
-
-                                        buildingId = createdBuildingId
-                                        SetupPrefs.saveBuildingId(context, createdBuildingId)
-                                        step = SetupStep.SLOTS
-                                        showMessage("Casa creata correttamente")
-                                    } else {
-                                        showMessage(body?.message ?: "Errore creazione casa")
-                                    }
-                                } catch (e: Exception) {
-                                    showMessage("Errore creazione casa: ${e.message}")
-                                } finally {
-                                    isLoading = false
+                                body.buildingId?.let {
+                                    SetupPrefs.saveBuildingId(context, it)
                                 }
+
+                                SetupPrefs.setSetupCompleted(context, true)
+
+                                showMessage("Setup completato")
+
+                                onSetupCompleted()
+
+                            } else {
+                                showMessage(body?.message ?: "Errore setup")
                             }
-                        },
-                        enabled = !isLoading
-                    ) {
-                        Text("Crea casa")
+
+                        } catch (e: Exception) {
+                            showMessage("Errore setup: ${e.message}")
+                        } finally {
+                            isLoading = false
+                        }
                     }
-                }
-
-                SetupStep.SLOTS -> {
-                    Text("Inserisci il numero dei cassetti")
-
-                    OutlinedTextField(
-                        value = slotsCount,
-                        onValueChange = { slotsCount = it },
-                        label = { Text("Numero cassetti") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-
-                    Button(
-                        onClick = {
-                            val count = slotsCount.toIntOrNull()
-                            if (count == null || count <= 0) {
-                                showMessage("Inserisci un numero valido")
-                                return@Button
-                            }
-
-                            val bId = buildingId ?: SetupPrefs.getBuildingId(context)
-                            if (bId == -1) {
-                                showMessage("Building ID mancante")
-                                return@Button
-                            }
-
-                            scope.launch {
-                                isLoading = true
-                                try {
-                                    val response = ApiClient.api.createAdminSlots(
-                                        CreateSlotsRequest(
-                                            buildingId = bId,
-                                            numberOfSlots = count
-                                        )
-                                    )
-
-                                    val body = response.body()
-                                    if (response.isSuccessful && body?.success == true) {
-                                        SetupPrefs.setSetupCompleted(context, true)
-                                        showMessage("Setup completato")
-                                        onSetupCompleted()
-                                    } else {
-                                        showMessage(body?.message ?: "Errore creazione cassetti")
-                                    }
-                                } catch (e: Exception) {
-                                    showMessage("Errore creazione cassetti: ${e.message}")
-                                } finally {
-                                    isLoading = false
-                                }
-                            }
-                        },
-                        enabled = !isLoading
-                    ) {
-                        Text("Completa setup")
-                    }
-                }
+                },
+                enabled = !isLoading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Completa setup")
             }
 
             if (isLoading) {

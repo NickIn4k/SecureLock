@@ -221,12 +221,26 @@ fun LoginScreen(navController: NavHostController) {
 
                                         if (response.isSuccessful && body?.success == true) {
                                             val userId = body.userId ?: 0
-                                            val isAdmin = body.isAdmin ?: (body.userRole == "admin")
+                                            val role = body.userRole
 
-                                            message = "Login riuscito"
+                                            when (role) {
+                                                "superadmin" -> {
+                                                    navController.navigate("setup/$userId") {
+                                                        popUpTo(Routes.LOGIN) { inclusive = true }
+                                                    }
+                                                }
 
-                                            navController.navigate("welcome/$userId/$isAdmin") {
-                                                popUpTo(Routes.LOGIN) { inclusive = true }
+                                                "admin" -> {
+                                                    navController.navigate("welcome/$userId/true") {
+                                                        popUpTo(Routes.LOGIN) { inclusive = true }
+                                                    }
+                                                }
+
+                                                else -> {
+                                                    navController.navigate("welcome/$userId/false") {
+                                                        popUpTo(Routes.LOGIN) { inclusive = true }
+                                                    }
+                                                }
                                             }
                                         } else {
                                             message = body?.message ?: "Credenziali non valide"

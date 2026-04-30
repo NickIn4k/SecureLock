@@ -69,20 +69,10 @@ interface ApiService {
         @Body request: DeleteUserRequest
     ): Response<GenericResponse>
 
-    @POST("api/admin/newAdmin")
-    suspend fun createAdminUser(
-        @Body request: CreateAdminRequest
-    ): Response<GenericResponse>
-
-    @POST("api/admin/newBuilding")
-    suspend fun createBuilding(
-        @Body request: CreateBuildingRequest
-    ): Response<GenericResponse>
-
-    @POST("api/admin/newSlots")
-    suspend fun createAdminSlots(
-        @Body request: CreateSlotsRequest
-    ): Response<GenericResponse>
+    @POST("api/setup/install")
+    suspend fun setupInstall(
+        @Body request: SetupInstallRequest
+    ): Response<SetupInstallResponse>
 }
 
 data class FaceAuthRequest(
@@ -220,18 +210,22 @@ data class DeleteUserRequest(
     val userId: Int
 )
 
-data class CreateAdminRequest(
-    val fullName: String,
-    val username: String,
-    val password: String
+data class SetupInstallRequest(
+    val superAdminId: Int,
+    val buildingName: String,
+    val buildingAddress: String,
+    val lat: Double,
+    val lng: Double,
+    val adminFullName: String,
+    val adminUsername: String,
+    val adminPassword: String,
+    val numberOfSlots: Int = 3
 )
 
-data class CreateBuildingRequest(
-    val name: String,
-    val address: String?
-)
-
-data class CreateSlotsRequest(
-    val buildingId: Int,
-    val numberOfSlots: Int
+data class SetupInstallResponse(
+    val success: Boolean,
+    val message: String,
+    val buildingId: Int? = null,
+    val adminId: Int? = null,
+    val slotsCreated: Int? = null
 )

@@ -1,14 +1,14 @@
 package com.example.securelock.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -16,10 +16,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.core.content.ContextCompat
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.securelock.R
 import com.example.securelock.ui.components.SecureLockMenu
 import kotlinx.coroutines.launch
@@ -27,11 +31,42 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
+
+    val context = LocalContext.current
     val cardShape = RoundedCornerShape(28.dp)
     val buttonShape = RoundedCornerShape(18.dp)
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // AGGIUNTO: stato permesso location
+    var locationGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    // launcher permesso location
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        locationGranted = granted
+        if (!granted) {
+            scope.launch {
+                snackbarHostState.showSnackbar("Permesso posizione negato")
+            }
+        }
+    }
+
+    // richiesta automatica all’apertura schermata
+    LaunchedEffect(Unit) {
+        if (!locationGranted) {
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -96,6 +131,7 @@ fun HomeScreen(navController: NavController) {
                 )
             }
         ) { paddingValues ->
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -103,6 +139,7 @@ fun HomeScreen(navController: NavController) {
                     .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = cardShape,
@@ -120,12 +157,14 @@ fun HomeScreen(navController: NavController) {
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
+
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+
                         Image(
                             painter = painterResource(id = R.drawable.securelock_logo),
                             contentDescription = "SecureLock logo",
@@ -171,15 +210,9 @@ fun HomeScreen(navController: NavController) {
                                 containerColor = Color(0xFF7EA8FF),
                                 contentColor = Color.White
                             ),
-                            elevation = ButtonDefaults.buttonElevation(
-                                defaultElevation = 4.dp
-                            )
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                         ) {
-                            Text(
-                                text = "Riconoscimento facciale",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            Text("Riconoscimento facciale")
                         }
 
                         Spacer(modifier = Modifier.height(14.dp))
@@ -211,11 +244,7 @@ fun HomeScreen(navController: NavController) {
                                 contentColor = Color(0xFF4D5E77)
                             )
                         ) {
-                            Text(
-                                text = "Login classico",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium
-                            )
+                            Text("Login classico")
                         }
                     }
                 }

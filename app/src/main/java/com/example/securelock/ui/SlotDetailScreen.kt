@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SlotDetailScreen(
     userId: Int,
+    deviceId: Int,
     slotId: Int,
     navController: NavController
 ) {
@@ -53,10 +54,10 @@ fun SlotDetailScreen(
         )
     }
 
-    LaunchedEffect(userId, slotId) {
+    LaunchedEffect(userId, deviceId, slotId) {
         isLoading = true
         try {
-            val response = ApiClient.api.getSlotDetail(userId, slotId)
+            val response = ApiClient.api.getSlotDetail(userId, deviceId, slotId)
             val body = response.body()
             if (response.isSuccessful && body?.success == true) {
                 detail = body
@@ -213,13 +214,7 @@ fun SlotDetailScreen(
                                 isActionLoading = true
                                 try {
                                     val action = if (isOpen) "close" else "open"
-                                    val response = ApiClient.api.slotAction(
-                                        SlotActionRequest(
-                                            userId = userId,
-                                            slotId = slotId,
-                                            action = action
-                                        )
-                                    )
+                                    val response = ApiClient.api.getSlotDetail(userId, deviceId, slotId)
                                     val body = response.body()
                                     if (response.isSuccessful && body?.success == true) {
                                         snackbarHostState.showSnackbar(

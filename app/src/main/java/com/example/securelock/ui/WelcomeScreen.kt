@@ -215,7 +215,7 @@ fun WelcomeScreen(
                                     slot = slot,
                                     onClick = {
                                         navController.navigate(
-                                            "slot_detail/$userId/${slot.slotId}"
+                                            "slot_detail/$userId/${slot.deviceId}/${slot.slotId}"
                                         )
                                     }
                                 )

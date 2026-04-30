@@ -235,15 +235,15 @@ fun CreateUserSection(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Slot ${slot.id}")
+                            Text("Slot ${slot.slotId}")
 
                             Checkbox(
-                                checked = selectedSlots.contains(slot.id),
+                                checked = selectedSlots.contains(slot.slotId),
                                 onCheckedChange = { checked ->
                                     selectedSlots = if (checked)
-                                        selectedSlots + slot.id
+                                        selectedSlots + slot.slotId
                                     else
-                                        selectedSlots - slot.id
+                                        selectedSlots - slot.slotId
                                 }
                             )
                         }

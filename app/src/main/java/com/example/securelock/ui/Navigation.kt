@@ -12,6 +12,7 @@ object Routes {
     const val LOGIN = "login"
     const val CREDITS = "credits"
     const val SETUP = "setup/{superAdminId}"
+    const val SLOT_DETAIL = "slot_detail/{userId}/{deviceId}/{slotId}"
 }
 
 @Composable
@@ -82,9 +83,13 @@ fun AppNavigation() {
             )
         }
 
-        composable("slot_detail/{userId}/{slotId}") { backStackEntry ->
+        composable("slot_detail/{userId}/{deviceId}/{slotId}") { backStackEntry ->
             val userId = backStackEntry.arguments
                 ?.getString("userId")
+                ?.toIntOrNull() ?: 0
+
+            val deviceId = backStackEntry.arguments
+                ?.getString("deviceId")
                 ?.toIntOrNull() ?: 0
 
             val slotId = backStackEntry.arguments
@@ -93,6 +98,7 @@ fun AppNavigation() {
 
             SlotDetailScreen(
                 userId = userId,
+                deviceId = deviceId,
                 slotId = slotId,
                 navController = navController
             )

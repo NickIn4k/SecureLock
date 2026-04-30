@@ -36,6 +36,7 @@ fun SetupScreen(
     var adminFullName by remember { mutableStateOf("") }
     var adminUsername by remember { mutableStateOf("") }
     var adminPassword by remember { mutableStateOf("") }
+    var deviceUid by remember { mutableStateOf("") }
 
     val slotsCount = 3
     var isLoading by remember { mutableStateOf(false) }
@@ -71,7 +72,7 @@ fun SetupScreen(
             }
     }
 
-    // 🔥 auto GPS al primo render
+    // auto GPS al primo render
     LaunchedEffect(Unit) {
         fetchLocation()
     }
@@ -109,6 +110,13 @@ fun SetupScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            OutlinedTextField(
+                value = deviceUid,
+                onValueChange = { deviceUid = it },
+                label = { Text("Device UID (ESP)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Text(
                 text = "Lat: ${lat ?: "caricamento..."}"
             )
@@ -142,13 +150,13 @@ fun SetupScreen(
 
             Button(
                 onClick = {
-
                     if (
                         buildingName.isBlank() ||
                         buildingAddress.isBlank() ||
                         adminFullName.isBlank() ||
                         adminUsername.isBlank() ||
-                        adminPassword.isBlank()
+                        adminPassword.isBlank() ||
+                        deviceUid.isBlank()
                     ) {
                         showMessage("Compila tutti i campi")
                         return@Button
@@ -168,7 +176,8 @@ fun SetupScreen(
                                     adminFullName = adminFullName,
                                     adminUsername = adminUsername,
                                     adminPassword = adminPassword,
-                                    numberOfSlots = slotsCount
+                                    numberOfSlots = slotsCount,
+                                    deviceUid = deviceUid
                                 )
                             )
 

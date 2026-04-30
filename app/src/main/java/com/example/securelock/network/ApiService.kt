@@ -46,6 +46,7 @@ interface ApiService {
     @GET("api/slot/detail")
     suspend fun getSlotDetail(
         @Query("userId") userId: Int,
+        @Query("deviceId") deviceId: Int,
         @Query("slotId") slotId: Int
     ): Response<SlotDetailResponse>
 
@@ -143,6 +144,7 @@ data class DashboardResponse(
 
 data class DashboardSlot(
     val slotId: Int,
+    val deviceId: Int,
     val status: String,
     val hasKey: Boolean,
     val lastUpdated: String? = null,
@@ -154,16 +156,17 @@ data class SlotDetailResponse(
     val success: Boolean,
     val message: String,
     val slotId: Int? = null,
+    val deviceId: Int? = null,
     val status: String? = null,
     val hasKey: Boolean? = null,
     val lastUpdated: String? = null,
     val vehicleName: String? = null,
-    val vehicleType: String? = null,
-    val buildingId: Int? = null
+    val vehicleType: String? = null
 )
 
 data class SlotActionRequest(
     val userId: Int,
+    val deviceId: Int,
     val slotId: Int,
     val action: String
 )
@@ -185,7 +188,8 @@ data class AdminBuildingSlotsResponse(
 )
 
 data class AdminSlotItem(
-    val id: Int,
+    val slotId: Int,
+    val deviceId: Int,
     val status: String,
     val hasKey: Boolean,
     val vehicleName: String? = null,
@@ -219,7 +223,8 @@ data class SetupInstallRequest(
     val adminFullName: String,
     val adminUsername: String,
     val adminPassword: String,
-    val numberOfSlots: Int = 3
+    val numberOfSlots: Int,
+    val deviceUid: String
 )
 
 data class SetupInstallResponse(

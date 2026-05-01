@@ -74,6 +74,26 @@ interface ApiService {
     suspend fun setupInstall(
         @Body request: SetupInstallRequest
     ): Response<SetupInstallResponse>
+
+    @GET("api/admin/building/vehicles")
+    suspend fun getAdminBuildingVehicles(
+        @Query("adminUserId") adminUserId: Int
+    ): Response<AdminBuildingVehiclesResponse>
+
+    @POST("api/admin/vehicle/create")
+    suspend fun createVehicle(
+        @Body request: CreateVehicleRequest
+    ): Response<GenericResponse>
+
+    @POST("api/admin/vehicle/delete")
+    suspend fun deleteVehicle(
+        @Body request: DeleteVehicleRequest
+    ): Response<GenericResponse>
+
+    @POST("api/admin/slot/assignvehicle")
+    suspend fun assignVehicleToSlot(
+        @Body request: AssignVehicleRequest
+    ): Response<GenericResponse>
 }
 
 data class FaceAuthRequest(
@@ -233,4 +253,34 @@ data class SetupInstallResponse(
     val buildingId: Int? = null,
     val adminId: Int? = null,
     val slotsCreated: Int? = null
+)
+
+data class CreateVehicleRequest(
+    val adminUserId: Int,
+    val name: String,
+    val type: String
+)
+
+data class DeleteVehicleRequest(
+    val adminUserId: Int,
+    val vehicleId: Int
+)
+
+data class AssignVehicleRequest(
+    val adminUserId: Int,
+    val slotId: Int,
+    val vehicleId: Int?
+)
+
+data class AdminBuildingVehiclesResponse(
+    val success: Boolean,
+    val message: String,
+    val buildingId: Int? = null,
+    val vehicles: List<VehicleItem> = emptyList()
+)
+
+data class VehicleItem(
+    val id: Int,
+    val name: String,
+    val type: String
 )

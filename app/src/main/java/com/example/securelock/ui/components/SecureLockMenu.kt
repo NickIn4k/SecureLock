@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -27,9 +28,11 @@ fun SecureLockMenu(
     userId: Int? = null,
     showDiagnostics: Boolean = false,
     showNewUser: Boolean = false,
+    showVehicles: Boolean = false,
     showCredits: Boolean = true,
     showLogout: Boolean = false,
     onDiagnosticsClick: () -> Unit = {},
+    onVehiclesClick: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -100,6 +103,12 @@ fun SecureLockMenu(
         if (showCredits) {
             menuItem("Crediti", Icons.Default.Info) {
                 navController.navigate(Routes.CREDITS)
+            }
+        }
+
+        if (showVehicles) {
+            menuItem("Veicoli", Icons.Default.DirectionsCar) {
+                onVehiclesClick()
             }
         }
 

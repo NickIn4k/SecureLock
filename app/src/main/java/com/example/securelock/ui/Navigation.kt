@@ -5,6 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.securelock.ui.admin.AdminNewUserScreen
+import com.example.securelock.ui.admin.AdminVehicleScreen
 
 object Routes {
     const val HOME = "home"
@@ -101,6 +102,17 @@ fun AppNavigation() {
                 deviceId = deviceId,
                 slotId = slotId,
                 navController = navController
+            )
+        }
+
+        composable("admin_vehicles/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments
+                ?.getString("userId")
+                ?.toIntOrNull() ?: 0
+
+            AdminVehicleScreen(
+                navController = navController,
+                userId = userId
             )
         }
     }

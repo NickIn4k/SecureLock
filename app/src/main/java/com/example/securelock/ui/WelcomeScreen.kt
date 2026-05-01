@@ -131,6 +131,7 @@ fun WelcomeScreen(
                                 showCredits = true,
                                 showDiagnostics = isAdmin,
                                 showNewUser = isAdmin,
+                                showVehicles = isAdmin,
                                 showLogout = true,
                                 onDiagnosticsClick = {
                                     scope.launch {
@@ -155,6 +156,9 @@ fun WelcomeScreen(
                                             showError("Errore: ${e.message}")
                                         }
                                     }
+                                },
+                                onVehiclesClick = {
+                                    navController.navigate("admin_vehicles/$userId")
                                 }
                             )
                         }

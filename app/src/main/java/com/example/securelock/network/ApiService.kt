@@ -106,7 +106,7 @@ data class LoginRequest(
 )
 
 data class BackLoginRequest(
-    val userId: Int
+    val adminUserId: Int
 )
 
 data class CreateUserRequest(

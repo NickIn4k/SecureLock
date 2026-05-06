@@ -54,28 +54,25 @@ fun SlotDetailScreen(
         )
     }
 
-    fun refreshDetail() {
-        scope.launch {
-            isLoading = true
-            try {
-                val response = ApiClient.api.getSlotDetail(userId, deviceId, slotId)
-                val body = response.body()
+    suspend fun fetchDetail() {
+        try {
+            val response = ApiClient.api.getSlotDetail(userId, deviceId, slotId)
+            val body = response.body()
 
-                if (response.isSuccessful && body?.success == true) {
-                    detail = body
-                } else {
-                    showError(body?.message ?: "Errore caricamento slot")
-                }
-            } catch (e: Exception) {
-                showError("Errore connessione: ${e.message}")
-            } finally {
-                isLoading = false
+            if (response.isSuccessful && body?.success == true) {
+                detail = body
+            } else {
+                showError(body?.message ?: "Errore caricamento slot")
             }
+        } catch (e: Exception) {
+            showError("Errore connessione: ${e.message}")
         }
     }
 
     LaunchedEffect(userId, deviceId, slotId) {
-        refreshDetail()
+        isLoading = true
+        fetchDetail()
+        isLoading = false
     }
 
     val isOpen = detail?.status.equals("open", ignoreCase = true)
@@ -211,7 +208,7 @@ fun SlotDetailScreen(
                             scope.launch {
                                 isActionLoading = true
                                 try {
-                                    val action = if (isOpen) "close" else "open"
+                                    val action = "open"
 
                                     val response = ApiClient.api.slotAction(
                                         SlotActionRequest(
@@ -230,12 +227,19 @@ fun SlotDetailScreen(
                                             duration = SnackbarDuration.Short
                                         )
 
-                                        // Attendo che Node-RED faccia MQTT + eventuale auto-close
-                                        // Se open, dopo 7 secondi il device chiude da solo
-                                        // quindi aspetto un po' e poi rileggo lo stato
-                                        delay(if (action == "open") 8500L else 1500L)
+                                        // Aggiornamento ottimistico subito
+                                        detail = detail?.copy(
+                                            status = if (action == "open") "open" else "closed"
+                                        )
 
-                                        refreshDetail()
+                                        // Polling breve per vedere lo stato reale aggiornato dal DB
+                                        scope.launch {
+                                            repeat(8) {
+                                                delay(1000)
+                                                fetchDetail()
+                                                if (detail?.status.equals("closed", ignoreCase = true)) return@launch
+                                            }
+                                        }
                                     } else {
                                         showError(body?.message ?: "Errore comando slot")
                                     }
@@ -246,7 +250,7 @@ fun SlotDetailScreen(
                                 }
                             }
                         },
-                        enabled = !isActionLoading,
+                        enabled = !isActionLoading && !isOpen,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(58.dp),
@@ -265,7 +269,7 @@ fun SlotDetailScreen(
                             )
                         } else {
                             Text(
-                                text = if (isOpen) "Chiudi cassetto" else "Apri cassetto",
+                                text = "Apri cassetto",
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 16.sp
                             )

@@ -203,7 +203,10 @@ fun LoginScreen(navController: NavHostController) {
 
                         Button(
                             onClick = {
-                                if (username.isBlank() || password.isBlank()) {
+                                val cleanUsername = username.trim()
+                                val cleanPassword = password.trim()
+
+                                if (cleanUsername.isBlank() || cleanPassword.isBlank()) {
                                     message = "Inserisci username e password"
                                     return@Button
                                 }
@@ -214,7 +217,7 @@ fun LoginScreen(navController: NavHostController) {
                                 scope.launch {
                                     try {
                                         val response = ApiClient.api.login(
-                                            LoginRequest(username, password)
+                                            LoginRequest(cleanUsername, cleanPassword)
                                         )
 
                                         val body = response.body()

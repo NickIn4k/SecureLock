@@ -10,6 +10,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.securelock.network.AdminSlotItem
 import com.example.securelock.network.ApiClient
@@ -34,6 +36,7 @@ fun CreateUserSection(
     var faceEmbedding by remember { mutableStateOf<List<Float>?>(null) }
     var isFaceCheckedOk by remember { mutableStateOf(false) } // Cerca volti duplicati nel db
 
+    var showPassword by remember { mutableStateOf(false) }
     var selectedSlots by remember { mutableStateOf(setOf<Int>()) }
 
     var isLoading by remember { mutableStateOf(false) }
@@ -104,6 +107,20 @@ fun CreateUserSection(
             onValueChange = { password = it },
             label = { Text("Password") },
             shape = shape,
+            singleLine = true,
+            visualTransformation = if (showPassword) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            trailingIcon = {
+                TextButton(onClick = { showPassword = !showPassword }) {
+                    Text(
+                        text = if (showPassword) "Nascondi" else "Mostra",
+                        color = Color(0xFF7EA8FF)
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -267,8 +284,11 @@ fun CreateUserSection(
                 defaultElevation = 4.dp
             ),
             onClick = {
+                val cleanFullName = fullName.trim()
+                val cleanUsername = username.trim()
+                val cleanPassword = password.trim()
 
-                if (fullName.isBlank() || username.isBlank() || password.isBlank()) {
+                if (cleanFullName.isBlank() || cleanUsername.isBlank() || cleanPassword.isBlank()) {
                     onMessage("Compila tutti i campi")
                     return@Button
                 }
@@ -280,9 +300,9 @@ fun CreateUserSection(
                         val createResponse = ApiClient.api.createUser(
                             CreateUserRequest(
                                 adminUserId = currentUserId,
-                                fullName = fullName,
-                                username = username,
-                                password = password,
+                                fullName = cleanFullName,
+                                username = cleanUsername,
+                                password = cleanPassword,
                                 slotIds = selectedSlots.toList()
                             )
                         )
@@ -342,7 +362,6 @@ fun CreateUserSection(
                         } else {
                             onMessage(saveFaceBody?.message ?: "Errore salvataggio volto")
                         }
-
                     } catch (e: Exception) {
                         onMessage("Errore: ${e.message}")
                     } finally {

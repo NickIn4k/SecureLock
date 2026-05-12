@@ -69,7 +69,7 @@ fun LoginScreen(navController: NavHostController) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
         ) {
             Image(
                 painter = painterResource(id = R.drawable.bg_clouds),

@@ -15,6 +15,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "BASE_URL",
+            "\"http://10.49.184.46:1880/\""
+        )
     }
 
     buildTypes {
@@ -34,6 +40,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -49,33 +56,21 @@ dependencies {
 
     implementation("androidx.compose.material:material-icons-extended")
 
-    // CameraX
     implementation("androidx.camera:camera-core:1.6.0")
     implementation("androidx.camera:camera-camera2:1.6.0")
     implementation("androidx.camera:camera-lifecycle:1.6.0")
     implementation("androidx.camera:camera-view:1.6.0")
 
-    // ML Kit Face Detection
     implementation("com.google.mlkit:face-detection:16.1.7")
-
-    // TensorFlow Lite (FaceNet)
     implementation("org.tensorflow:tensorflow-lite:2.17.0")
-
-    // AndroidX Biometric
     implementation("androidx.biometric:biometric:1.1.0")
 
-    // Retrofit
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
     implementation("com.squareup.okhttp3:logging-interceptor:5.3.2")
 
-    // Navigation Compose
     implementation("androidx.navigation:navigation-compose:2.7.7")
-
-    // Lifecycle Compose
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
-
-    // Coordinate
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
     testImplementation(libs.junit)

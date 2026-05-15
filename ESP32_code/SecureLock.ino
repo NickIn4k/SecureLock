@@ -2,22 +2,22 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <ESP32Servo.h>
+#include <time.h>
 #include "secrets.h"
 
 // Numero cassetti
 const int NUM_DRAWERS = 3;
 
-// ############ PIN ESP ############
 // SERVO
 const int SERVO_PINS[NUM_DRAWERS] = {18, 19, 21};
 
 // LED RGB
-const int LED_R[NUM_DRAWERS] = {23, 17, 0};
-const int LED_G[NUM_DRAWERS] = {22, 16, 2};
-const int LED_B[NUM_DRAWERS] = {5, 4, 15};
+const int LED_R[NUM_DRAWERS] = {25, 26, 27};
+const int LED_G[NUM_DRAWERS] = {14, 12, 13};
+const int LED_B[NUM_DRAWERS] = {33, 32, 4};
 
 // IR
-const int IR_PINS[NUM_DRAWERS] = {34, 35, 32};
+const int IR_PINS[NUM_DRAWERS] = {34, 35, 22};
 
 // Servo
 const int SERVO_LOCKED = 0;
@@ -57,73 +57,95 @@ void buildStatusTopic(char* out, size_t outSize, int slotId) {
     snprintf(out, outSize, "securelock/devices/%s/slots/%d/status", DEVICE_UID, slotId);
 }
 
-void buildEventTopic(char* out, size_t outSize, int slotId) {
-    snprintf(out, outSize, "securelock/devices/%s/slots/%d/event", DEVICE_UID, slotId);
-}
-
 void buildSlotsPrefix(char* out, size_t outSize) {
     snprintf(out, outSize, "securelock/devices/%s/slots/", DEVICE_UID);
 }
 
 // LED RGB
-// HIGH = spento, LOW = acceso
+// HIGH = acceso, LOW = spento
+
 void setLedRed(int i) {
-    digitalWrite(LED_R[i], LOW);
-    digitalWrite(LED_G[i], HIGH);
-    digitalWrite(LED_B[i], HIGH);
+    digitalWrite(LED_R[i], HIGH);
+    digitalWrite(LED_G[i], LOW);
+    digitalWrite(LED_B[i], LOW);
 }
 
 void setLedGreen(int i) {
-    digitalWrite(LED_R[i], HIGH);
-    digitalWrite(LED_G[i], LOW);
-    digitalWrite(LED_B[i], HIGH);
-}
-
-void setLedBlue(int i) {
-    digitalWrite(LED_R[i], HIGH);
+    digitalWrite(LED_R[i], LOW);
     digitalWrite(LED_G[i], HIGH);
     digitalWrite(LED_B[i], LOW);
 }
 
-void setLedOff(int i) {
-    digitalWrite(LED_R[i], HIGH);
-    digitalWrite(LED_G[i], HIGH);
+void setLedBlue(int i) {
+    digitalWrite(LED_R[i], LOW);
+    digitalWrite(LED_G[i], LOW);
     digitalWrite(LED_B[i], HIGH);
+}
+
+void setLedOff(int i) {
+    digitalWrite(LED_R[i], LOW);
+    digitalWrite(LED_G[i], LOW);
+    digitalWrite(LED_B[i], LOW);
 }
 
 // IR
 // LOW = chiave presente
 // HIGH = nessuna chiave
 bool hasKey(int i) {
-    return digitalRead(IR_PINS[i]) == LOW;
+    return digitalRead(IR_PINS[i]) == HIGH;
 }
 
 // MQTT
+void buildIsoTimestamp(char* out, size_t outSize) {
+    time_t now = time(nullptr);
+    struct tm tmUtc;
+    gmtime_r(&now, &tmUtc);
+
+    int ms = (int)(millis() % 1000);
+
+    snprintf(
+            out,
+            outSize,
+            "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ",
+            tmUtc.tm_year + 1900,
+            tmUtc.tm_mon + 1,
+            tmUtc.tm_mday,
+            tmUtc.tm_hour,
+            tmUtc.tm_min,
+            tmUtc.tm_sec,
+            ms
+    );
+}
+
 void publishStatus(int i, const char* status) {
     char topic[128];
     buildStatusTopic(topic, sizeof(topic), i + 1);
 
-    bool ok = mqttClient.publish(topic, status);
+    bool keyPresent = hasKey(i);
+    const char* eventName = (strcmp(status, "closed") == 0) ? "auto_close" : "open";
+
+    char ts[40];
+    buildIsoTimestamp(ts, sizeof(ts));
+
+    char payload[256];
+    snprintf(
+            payload,
+            sizeof(payload),
+            "{\"state\":\"%s\",\"keyPresent\":%s,\"slotId\":%d,\"deviceUid\":\"%s\",\"event\":\"%s\",\"ts\":\"%s\"}",
+            status,
+            keyPresent ? "true" : "false",
+            i + 1,
+            DEVICE_UID,
+            eventName,
+            ts
+    );
+
+    bool ok = mqttClient.publish(topic, payload);
 
     Serial.print("[MQTT] publish status | topic: ");
     Serial.print(topic);
     Serial.print(" | payload: ");
-    Serial.print(status);
-    Serial.print(" | ok: ");
-    Serial.println(ok ? "true" : "false");
-}
-
-void publishEvent(int i, const char* eventName) {
-    char topic[128];
-    buildEventTopic(topic, sizeof(topic), i + 1);
-
-    bool ok = mqttClient.publish(topic, eventName);
-
-    // Stampa eventi MQTT
-    Serial.print("[MQTT] publish event  | topic: ");
-    Serial.print(topic);
-    Serial.print(" | payload: ");
-    Serial.print(eventName);
+    Serial.print(payload);
     Serial.print(" | ok: ");
     Serial.println(ok ? "true" : "false");
 }
@@ -154,8 +176,6 @@ void openDrawer(int i) {
 
     publishStatus(i, "open");
 
-    setLedGreen(i);
-
     Serial.print("[DRAWER] Attendo ");
     Serial.print(OPEN_DELAY_MS);
     Serial.println(" ms");
@@ -175,7 +195,7 @@ void openDrawer(int i) {
     Serial.print(" hasKey = ");
     Serial.println(key ? "true" : "false");
 
-    publishEvent(i, key ? "key_present" : "key_absent");
+    // ← publishEvent rimossa — lo stato chiave è già incluso nel publishStatus
     publishStatus(i, "closed");
 
     if (key) {

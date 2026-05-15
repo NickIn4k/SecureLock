@@ -10,4 +10,4 @@ const char* MQTT_USER = "USERNAME";
 const char* MQTT_PASS = "PASSWORD";
 
 const char* MQTT_CLIENT_ID = "NOME";
-const char* BUILDING_ID    = "NOME";
+const char* DEVICE_UID    = "NOME";

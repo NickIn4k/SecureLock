@@ -8,10 +8,10 @@ import retrofit2.http.Query
 
 interface ApiService {
 
-    @POST("api/auth/login/password")
+    @POST("api/auth/login/password")    //Login con password
     suspend fun login(
-        @Body body: LoginRequest
-    ): Response<AuthResponse>
+        @Body body: LoginRequest    //Inserisce il body della richiesta
+    ): Response<AuthResponse>   //Restituisce la risposta HTTP e la converte in kotlin
 
     @POST("api/auth/login/face") //Login con volto
     suspend fun authWithFace(
@@ -40,7 +40,7 @@ interface ApiService {
 
     @GET("api/user/dashboard")
     suspend fun getDashboard(
-        @Query("userId") userId: Int
+        @Query("userId") userId: Int    //Inserisce il dato nella query string
     ): Response<DashboardResponse>
 
     @GET("api/slot/detail")

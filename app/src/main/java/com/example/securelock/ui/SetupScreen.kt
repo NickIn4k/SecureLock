@@ -23,7 +23,6 @@ import androidx.core.app.ActivityCompat
 import com.example.securelock.R
 import com.example.securelock.network.ApiClient
 import com.example.securelock.network.SetupInstallRequest
-import com.example.securelock.storage.SetupPrefs
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 
@@ -347,13 +346,6 @@ fun SetupScreen(
                                         val body = response.body()
 
                                         if (response.isSuccessful && body?.success == true) {
-
-                                            body.buildingId?.let {
-                                                SetupPrefs.saveBuildingId(context, it)
-                                            }
-
-                                            SetupPrefs.setSetupCompleted(context, true)
-
                                             showMessage("Setup completato")
                                             onSetupCompleted()
 

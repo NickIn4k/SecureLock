@@ -39,7 +39,7 @@ fun HomeScreen(navController: NavController) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // AGGIUNTO: stato permesso location
+    // stato permesso location
     var locationGranted by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(

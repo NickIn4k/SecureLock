@@ -35,23 +35,27 @@ import com.example.securelock.network.DashboardSlot
 import com.example.securelock.ui.components.SecureLockMenu
 import kotlinx.coroutines.launch
 
+// Material3 ha tutti gli oggetti container
+// Estensione sperimentale di Material3 per gli Alert
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
+@Composable // Disegna l'interfaccia grafica
 fun WelcomeScreen(
     userId: Int,
     isAdmin: Boolean,
     navController: NavController
 ) {
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val scope = rememberCoroutineScope() // Gestione stato coroutine
+    val context = LocalContext.current // Contesto dell'app, per aprire link esterni
 
+    // Dati variabili relativi al server
     var dashboard by remember { mutableStateOf<DashboardResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // ── Snackbar ──────────────────────────────────────────────────────────────
+    // Snackbar (box per messaggi)
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Funzione helper per mostrare errori in rosso
+    // Funzione: mostra errori in rosso
+    // suspend: async
     suspend fun showError(message: String) {
         snackbarHostState.showSnackbar(
             message = message,
@@ -59,16 +63,18 @@ fun WelcomeScreen(
         )
     }
 
+    // Blocco per caricare dati utente
     LaunchedEffect(userId) {
         isLoading = true
+        // Richieste HTTP in background
         try {
             val response = ApiClient.api.getDashboard(userId)
             val body = response.body()
-            if (response.isSuccessful && body?.success == true) {
+
+            if (response.isSuccessful && body?.success == true)
                 dashboard = body
-            } else {
+            else
                 showError(body?.message ?: "Errore caricamento dashboard")
-            }
         } catch (e: Exception) {
             showError("Errore connessione: ${e.message}")
         } finally {
@@ -76,12 +82,12 @@ fun WelcomeScreen(
         }
     }
 
+    // Dati dal body
     val userName = dashboard?.userName ?: ""
 
+    // Container principale
     Box(modifier = Modifier.fillMaxSize()) {
-
-        // ── Sfondo immagine ───────────────────────────────────────────────────
-        // Metti bg_welcome.jpg in res/drawable/
+        // Sfondo immagine => res/bg_welcome.png
         Image(
             painter = painterResource(id = R.drawable.bg_welcome),
             contentDescription = null,
@@ -89,16 +95,17 @@ fun WelcomeScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Overlay semitrasparente chiaro sopra lo sfondo
-        // per leggibilità del testo
+        // Overlay semitrasparente sopra
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0x55FFFFFF))
         )
 
+        // Struttura base
         Scaffold(
             containerColor = Color.Transparent,
+            // Creazione di Snackbar e definizione di errori
             snackbarHost = {
                 SnackbarHost(hostState = snackbarHostState) { data ->
                     // Snackbar rossa per gli errori
@@ -111,6 +118,8 @@ fun WelcomeScreen(
                     )
                 }
             },
+
+            // Barra superiore => menu a tendina
             topBar = {
                 TopAppBar(
                     title = {},
@@ -118,6 +127,7 @@ fun WelcomeScreen(
                         containerColor = Color.Transparent,
                         scrolledContainerColor = Color.Transparent
                     ),
+                    // Button per aprire il menu a tendina
                     actions = {
                         Box(
                             modifier = Modifier
@@ -125,7 +135,9 @@ fun WelcomeScreen(
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color(0x33FFFFFF))
                         ) {
+                            // Menu a tendina effettivo
                             SecureLockMenu(
+                                // Valori booleani per abilitare le azioni
                                 navController = navController,
                                 userId = userId,
                                 showCredits = true,
@@ -133,6 +145,7 @@ fun WelcomeScreen(
                                 showNewUser = isAdmin,
                                 showVehicles = isAdmin,
                                 showLogout = true,
+                                // Eventi onclick disponibili
                                 onDiagnosticsClick = {
                                     scope.launch {
                                         try {

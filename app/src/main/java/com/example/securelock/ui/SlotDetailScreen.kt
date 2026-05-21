@@ -31,7 +31,7 @@ import com.example.securelock.network.SlotDetailResponse
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class) //Per utilizzare funzioni non ancora stabili
 @Composable
 fun SlotDetailScreen(
     userId: Int,
@@ -39,14 +39,18 @@ fun SlotDetailScreen(
     slotId: Int,
     navController: NavController
 ) {
+    // Scope per lanciare coroutine dentro Compose
     val scope = rememberCoroutineScope()
 
+    // Dettaglio dello slot letto dal backend
     var detail by remember { mutableStateOf<SlotDetailResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isActionLoading by remember { mutableStateOf(false) }
 
+    // Stato per mostrare messaggi temporanei
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Mostra un messaggio di errore nello snackbar
     suspend fun showError(message: String) {
         snackbarHostState.showSnackbar(
             message = message,
@@ -54,21 +58,24 @@ fun SlotDetailScreen(
         )
     }
 
+    // Recupera dal backend i dettagli dello slot
     suspend fun fetchDetail() {
         try {
             val response = ApiClient.api.getSlotDetail(userId, deviceId, slotId)
             val body = response.body()
 
-            if (response.isSuccessful && body?.success == true) {
+            if (response.isSuccessful && body?.success == true)
+                // Se la risposta è valida, aggiorna lo stato UI
                 detail = body
-            } else {
+            else
+                // Se il backend risponde male, mostra il messaggio restituito
                 showError(body?.message ?: "Errore caricamento slot")
-            }
         } catch (e: Exception) {
             showError("Errore connessione: ${e.message}")
         }
     }
 
+    // Questo blocco parte quando cambiano userId, deviceId o slotId
     LaunchedEffect(userId, deviceId, slotId) {
         isLoading = true
         fetchDetail()
@@ -77,8 +84,10 @@ fun SlotDetailScreen(
 
     val isOpen = detail?.status.equals("open", ignoreCase = true)
 
+    // Sfondo principale a schermo intero
     Box(modifier = Modifier.fillMaxSize()) {
 
+        // Immagine di background
         Image(
             painter = painterResource(id = R.drawable.bg_welcome),
             contentDescription = null,
@@ -86,16 +95,19 @@ fun SlotDetailScreen(
             modifier = Modifier.fillMaxSize()
         )
 
+        // Strato bianco semitrasparente sopra l’immagine
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0x55FFFFFF))
         )
 
+        // Scaffold = struttura standard Material con top bar e snackbar
         Scaffold(
             containerColor = Color.Transparent,
             snackbarHost = {
                 SnackbarHost(hostState = snackbarHostState) { data ->
+                    // Qui viene collegato lo SnackbarHost
                     Snackbar(
                         snackbarData = data,
                         containerColor = Color(0xFFB00020),
@@ -105,6 +117,7 @@ fun SlotDetailScreen(
                     )
                 }
             },
+            // Barra in alto con freccia indietro
             topBar = {
                 TopAppBar(
                     title = {},
@@ -124,6 +137,8 @@ fun SlotDetailScreen(
                 )
             }
         ) { paddingValues ->
+
+            // Colonna centrale con tutto il contenuto
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -134,7 +149,7 @@ fun SlotDetailScreen(
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(color = Color(0xFF16324F))
-                } else {
+                } else {    // Mostra i dati relativi al cassetto
                     Text(
                         text = "Cassetto $slotId",
                         fontSize = 42.sp,
@@ -154,6 +169,7 @@ fun SlotDetailScreen(
 
                     Spacer(Modifier.height(40.dp))
 
+                    // Card “glassmorphism” con i dettagli
                     GlassInfoCard {
                         Column(
                             modifier = Modifier
@@ -203,6 +219,7 @@ fun SlotDetailScreen(
 
                     Spacer(Modifier.height(24.dp))
 
+                    // Bottone per aprire il cassetto
                     Button(
                         onClick = {
                             scope.launch {
@@ -210,6 +227,7 @@ fun SlotDetailScreen(
                                 try {
                                     val action = "open"
 
+                                    // Chiamata al backend per comandare lo slot
                                     val response = ApiClient.api.slotAction(
                                         SlotActionRequest(
                                             userId = userId,
@@ -222,17 +240,18 @@ fun SlotDetailScreen(
                                     val body = response.body()
 
                                     if (response.isSuccessful && body?.success == true) {
+                                        // Messaggio di successo
                                         snackbarHostState.showSnackbar(
                                             message = body.message,
                                             duration = SnackbarDuration.Short
                                         )
 
-                                        // Aggiornamento ottimistico subito
+                                        // Aggiornamento ottimistico subito senza aspettare il db
                                         detail = detail?.copy(
                                             status = if (action == "open") "open" else "closed"
                                         )
 
-                                        // Polling breve per vedere lo stato reale aggiornato dal DB
+                                        // Polling breve per controllare lo stato reale aggiornato dal DB
                                         scope.launch {
                                             repeat(8) {
                                                 delay(1000)
@@ -250,7 +269,7 @@ fun SlotDetailScreen(
                                 }
                             }
                         },
-                        enabled = !isActionLoading && !isOpen,
+                        enabled = !isActionLoading && !isOpen,  // bottone disabilitato se già aperto o se sta lavorando
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(58.dp),
@@ -283,6 +302,7 @@ fun SlotDetailScreen(
 
 @Composable
 fun GlassInfoCard(content: @Composable () -> Unit) {
+    // Contenitore esterno con angoli arrotondati
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -307,6 +327,7 @@ fun GlassInfoCard(content: @Composable () -> Unit) {
                 )
         )
 
+        // Contenuto vero e proprio della card
         content()
     }
 }

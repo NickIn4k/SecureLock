@@ -1,6 +1,6 @@
 package com.example.securelock.ui
 
-import android.Manifest
+import android.Manifest     //Permessi android
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import androidx.compose.foundation.Image
@@ -26,13 +26,15 @@ import com.example.securelock.network.SetupInstallRequest
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class) //Per utilizzare funzioni non ancora stabili
 @Composable
 fun SetupScreen(
     superAdminId: Int,
-    onSetupCompleted: () -> Unit
+    onSetupCompleted: () -> Unit    // Callback chiamata quando il setup termina con successo
 ) {
+    // Context Android corrente
     val context = LocalContext.current
+    // Scope per lanciare coroutine
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -50,41 +52,50 @@ fun SetupScreen(
     val slotsCount = 3
     var isLoading by remember { mutableStateOf(false) }
 
+    // Mostra snackbar con messaggio
     fun showMessage(msg: String) {
         scope.launch {
             snackbarHostState.showSnackbar(msg)
         }
     }
 
+    // Ignora warning sul controllo permessi
     @SuppressLint("MissingPermission")
-    fun fetchLocation() {
-        val fusedLocationClient =
-            LocationServices.getFusedLocationProviderClient(context)
 
+    // Recupera posizione GPS del telefono
+    fun fetchLocation() {
+        // Client Google per posizione
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+
+        // Controlla se il permesso GPS è stato concesso
         if (ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+            // Se non c’è il permesso, mostra errore
             showMessage("Permesso posizione non concesso")
             return
         }
 
+        // Recupera ultima posizione nota
         fusedLocationClient.lastLocation
+            // Callback eseguita quando arriva la posizione
             .addOnSuccessListener { location ->
                 if (location != null) {
                     lat = location.latitude
                     lng = location.longitude
-                } else {
+                } else
                     showMessage("Impossibile ottenere posizione")
-                }
             }
     }
 
+    // Parte automaticamente quando la schermata viene aperta
     LaunchedEffect(Unit) {
         fetchLocation()
     }
 
+    // Contenitore principale
     Box(modifier = Modifier.fillMaxSize()) {
 
         Image(
@@ -168,6 +179,7 @@ fun SetupScreen(
 
                         OutlinedTextField(
                             value = buildingName,
+                            // Aggiorna stato quando scrivi
                             onValueChange = { buildingName = it },
                             label = { Text("Nome edificio") },
                             modifier = Modifier.fillMaxWidth(),
@@ -185,6 +197,7 @@ fun SetupScreen(
                             )
                         )
 
+                        // Campo indirizzo edificio
                         OutlinedTextField(
                             value = buildingAddress,
                             onValueChange = { buildingAddress = it },
@@ -204,6 +217,7 @@ fun SetupScreen(
                             )
                         )
 
+                        // Campo UID ESP32
                         OutlinedTextField(
                             value = deviceUid,
                             onValueChange = { deviceUid = it },
@@ -311,8 +325,11 @@ fun SetupScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
+                        // Bottone setup
                         Button(
                             onClick = {
+
+                                // Controlla che tutti i campi siano compilati
                                 if (
                                     buildingName.isBlank() ||
                                     buildingAddress.isBlank() ||
@@ -325,14 +342,18 @@ fun SetupScreen(
                                     return@Button
                                 }
 
+                                // Coroutine per chiamata API
                                 scope.launch {
                                     isLoading = true
                                     try {
+                                        // Chiamata backend setup installazione
                                         val response = ApiClient.api.setupInstall(
                                             SetupInstallRequest(
                                                 superAdminId = superAdminId,
                                                 buildingName = buildingName,
                                                 buildingAddress = buildingAddress,
+                                                // Coordinate GPS
+                                                // Se null usa Milano come fallback
                                                 lat = lat ?: 45.4642,
                                                 lng = lng ?: 9.1900,
                                                 adminFullName = adminFullName,
@@ -345,21 +366,25 @@ fun SetupScreen(
 
                                         val body = response.body()
 
+                                        // Setup riuscito
                                         if (response.isSuccessful && body?.success == true) {
                                             showMessage("Setup completato")
+                                            // Callback di completamento
                                             onSetupCompleted()
-
-                                        } else {
+                                        } else
+                                            // Errore backend
                                             showMessage(body?.message ?: "Errore setup")
-                                        }
 
                                     } catch (e: Exception) {
                                         showMessage("Errore setup: ${e.message}")
                                     } finally {
+                                        // Fine caricamento
                                         isLoading = false
                                     }
                                 }
                             },
+
+                            // Disabilita bottone durante caricamento
                             enabled = !isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -373,6 +398,7 @@ fun SetupScreen(
                             Text("Completa setup")
                         }
 
+                        // Loader visibile durante setup
                         if (isLoading) {
                             Box(
                                 modifier = Modifier.fillMaxWidth(),
